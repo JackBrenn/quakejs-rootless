@@ -38,9 +38,11 @@ RUN chmod 755 /entrypoint.sh && \
     chown sa_quakejs:sa_quakejs /entrypoint.sh
 
 # Configure Apache to run on non-privileged port
+# Create necessary Apache directories and set permissions for non-root user
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf && \
     sed -i 's/:80/:8080/' /etc/apache2/sites-enabled/000-default.conf && \
-    chown -R sa_quakejs:sa_quakejs /var/log/apache2 /var/run/apache2
+    mkdir -p /var/run/apache2 /var/lock/apache2 && \
+    chown -R sa_quakejs:sa_quakejs /var/log/apache2 /var/run/apache2 /var/lock/apache2
 
 # Switch to non-root user
 USER sa_quakejs
