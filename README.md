@@ -147,7 +147,7 @@ docker run -d \
 
 ### Server Configuration
 
-The server configuration can be customized by modifying `server.cfg`. Refer to the [Quake 3 World Server Guide](https://www.quake3world.com/q3guide/servers.html) for detailed configuration options.
+The server configuration can be customized by modifying `server.cfg`.
 
 ### Ports
 
