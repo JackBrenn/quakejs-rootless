@@ -26,7 +26,14 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 
 ## ⚠️ Security Notice
 
-The original Quake III Arena game code contains known vulnerabilities due to its age. **It is strongly recommended to run this container using Podman as a non-root user** rather than Docker with sudo privileges. This provides better isolation and security through rootless containers.
+**This project contains known security vulnerabilities from multiple sources:**
+
+1. **Legacy Quake III Arena game code** - The original game engine was not designed with modern security practices and contains known exploits
+2. **Deprecated NPM packages** - The QuakeJS implementation relies on old, unmaintained Node.js dependencies with known vulnerabilities
+
+**It is strongly recommended to run this container using Podman as a non-root user** rather than Docker with sudo privileges. This provides better isolation and security through rootless containers.
+
+**Important:** Only run this server on trusted, isolated networks (such as a private LAN or VPN). Do **NOT** expose this directly to the public internet.
 
 ## 🚀 Quick Start
 
@@ -141,13 +148,16 @@ The server configuration can be customized by modifying `server.cfg`. Refer to t
 
 ## 🔐 Security Best Practices
 
-1. **Use Podman with a non-root user** - Provides rootless container execution for better isolation
-2. **Run on isolated networks** - Consider using dedicated VLANs or network segments
-3. **Keep the container updated** - Regularly rebuild with the latest base image updates
-4. **Limit network exposure** - Only expose the container to trusted networks (LAN/VPN)
-5. **Use firewall rules** - Restrict access to the game ports to known IP ranges
+Due to vulnerabilities in both the legacy Quake III game code and deprecated NPM packages, follow these security practices:
 
-The original Quake III Arena codebase was not designed with modern security practices in mind. While this containerization provides some isolation, running as a non-root user with Podman significantly reduces potential attack surfaces.
+1. **Use Podman with a non-root user** - Provides rootless container execution for better isolation
+2. **Run on isolated networks only** - Use dedicated VLANs, private LANs, or VPN connections
+3. **Never expose to public internet** - This container should only be accessible on trusted networks
+4. **Keep the container updated** - Regularly rebuild with the latest base image security patches
+5. **Use firewall rules** - Restrict access to game ports to known IP addresses only
+6. **Monitor container activity** - Watch for unusual behavior or unauthorized access attempts
+
+While upgrading to Ubuntu 24.04 and Node.js 22.x LTS provides the latest security patches for the underlying system and runtime, the game code and its NPM dependencies remain vulnerable. Containerization and rootless execution provide defense-in-depth but do not eliminate the risks entirely.
 
 ## 📝 What's Different?
 
@@ -164,6 +174,7 @@ These updates provide:
 - Improved Node.js performance and features
 - Better long-term compatibility
 - Modern package versions with security patches
+- Reduced attack surface (though vulnerabilities remain in game code and NPM packages)
 
 ## 🙏 Credits & Acknowledgments
 
@@ -187,6 +198,6 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 **Ready to frag?** Share the server URL with your friends and enjoy some classic Quake III Arena! 🚀
 
-*Remember: For maximum security, run with Podman as a non-root user!*
+*Remember: For maximum security, run with Podman as a non-root user on isolated networks only!*
 
 </div>
