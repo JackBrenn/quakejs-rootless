@@ -33,7 +33,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 
 **It is strongly recommended to run this container using Podman as a non-root user** rather than Docker with sudo privileges. This provides better isolation and security through rootless containers.
 
-**Important:** Only run this server on trusted, isolated networks (such as a private LAN or VPN). Do **NOT** expose this directly to the public internet.
+**Important:** Only run this server on trusted, isolated networks (such as a private LAN or VPN). Do **NOT** expose this directly to the public internet (BUT, you can if you want!).
 
 ## 🚀 Quick Start
 
