@@ -21,6 +21,9 @@ COPY --chown=sa_quakejs:sa_quakejs quakejs-master/ /quakejs/
 WORKDIR /quakejs
 
 RUN npm install
+# FIX: Reset all ownership in node_modules
+RUN chown -R sa_quakejs:sa_quakejs /quakejs/node_modules
+
 RUN ls
 
 COPY --chown=sa_quakejs:sa_quakejs server.cfg /quakejs/base/baseq3/server.cfg
