@@ -102,7 +102,7 @@ cd quakejs-rootless
 
 2. **Build the image:**
 ```bash
-podman build -t docker.io/awakenedpower/quakejs-rootless:latest .
+podman build -t quakejs-rootless:latest .
 ```
 
 3. **Run the container:**
@@ -112,7 +112,7 @@ podman run -d \
   -e HTTP_PORT=8080 \
   -p 8080:8080 \
   -p 27960:27960 \
-  localhost/quakejs-rootless:latest
+  quakejs-rootless:latest
 ```
 
 ### Building with Docker
@@ -124,7 +124,17 @@ cd quakejs-rootless
 ```
 2. **Build the image:**
 ```bash
-docker build -t awakenedpower/quakejs-rootless:latest .
+docker build -t quakejs-rootless:latest .
+```
+
+3. **Run the container:**
+```bash
+docker run -d \
+  --name quakejs \
+  -e HTTP_PORT=8080 \
+  -p 8080:8080 \
+  -p 27960:27960 \
+  quakejs-rootless:latest
 ```
 
 ## ⚙️ Configuration
@@ -173,7 +183,7 @@ This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://
 |-----------|----------|-----------|
 | Base OS | Ubuntu 20.04 | **Debian 13 Slim** |
 | Node.js | 14.x | **22.x LTS** |
-| Web Server | Apache 2 | **Nginx (production-ready)** |
+| Web Server | Python http.server | **Nginx (production-ready)** |
 | Container User | root | **non-root (quakejs)** |
 | Maintenance | Updated 2020 | **Updated 2025** |
 
@@ -187,6 +197,8 @@ These updates provide:
 - Enhanced security through non-root container execution
 
 ## 🙏 Credits & Acknowledgments
+
+This project is built on the shoulders of giants:
 
 - **[@treyyoder](https://github.com/treyyoder)** - Original [quakejs-docker](https://github.com/treyyoder/quakejs-docker) implementation that made fully local QuakeJS servers possible
 - **[@begleysm](https://github.com/begleysm)** - [QuakeJS fork](https://github.com/begleysm/quakejs) with local server capabilities
