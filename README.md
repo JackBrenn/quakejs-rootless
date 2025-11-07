@@ -1,6 +1,6 @@
 <div align="center">
 
-# QuakeJS Container Rootless
+# QuakeJS Rootless Container
 
 ### Play Quake III Arena in your browser with Docker
 
@@ -47,7 +47,7 @@ For internet-facing deployments, use a VPN, reverse proxy with authentication, o
 podman run -d \
   --name quakejs \
   -e HTTP_PORT=8080 \
-  -p 8080:80 \
+  -p 8080:8080 \
   -p 27960:27960 \
   awakenedpower/quakejs-rootless:latest
 ```
@@ -58,7 +58,7 @@ podman run -d \
 docker run -d \
   --name quakejs \
   -e HTTP_PORT=8080 \
-  -p 8080:80 \
+  -p 8080:8080 \
   -p 27960:27960 \
   awakenedpower/quakejs-rootless:latest
 ```
