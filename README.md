@@ -75,7 +75,7 @@ version: '3.8'
 services:
   quakejs:
     container_name: quakejs
-    image: docker.io/awakenedpower/quakejs-rootless:latest
+    image: awakenedpower/quakejs-rootless:latest
     environment:
       - HTTP_PORT=8080
     ports:
