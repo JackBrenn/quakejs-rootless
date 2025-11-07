@@ -10,7 +10,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js_22.x-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-A fully self-contained, Dockerized QuakeJS server running on Ubuntu 24.04 and Node.js 22.x LTS
+A fully self-contained, Dockerized QuakeJS server running on Debian 13 and Node.js 22.x LTS
 
 **🔒 This container runs as a non-root user for enhanced security**
 
@@ -21,7 +21,7 @@ A fully self-contained, Dockerized QuakeJS server running on Ubuntu 24.04 and No
 This project provides a completely local QuakeJS server that runs entirely in Docker. No external dependencies, no content servers, no proxies - just pure Quake III Arena gaming in your browser.
 
 **Key improvements in this fork:**
-- ✨ Updated to **Ubuntu 24.04** base image
+- ✨ Updated to **Debian 13** base image
 - 🚀 Upgraded to **Node.js 22.x LTS** for better performance and security
 - 📦 Fully self-contained with all game assets bundled
 - 🔒 No external content servers required
@@ -177,13 +177,13 @@ This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://
 
 | Component | Original | This Fork |
 |-----------|----------|-----------|
-| Base OS | Ubuntu 20.04 | **Ubuntu 24.04** |
+| Base OS | Ubuntu 20.04 | **Debian 13** |
 | Node.js | 14.x | **22.x LTS** |
 | Container User | root | **non-root (quake)** |
 | Maintenance | Updated 2020 | **Updated 2025** |
 
 These updates provide:
-- Extended security support from Ubuntu 24.04 LTS
+- Extended security support from Debian 13
 - Improved Node.js performance and features
 - Better long-term compatibility
 - Modern package versions with security patches
