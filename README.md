@@ -8,9 +8,12 @@
 ![Podman](https://img.shields.io/badge/Podman-892CA0?style=for-the-badge&logo=podman&logoColor=white)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu_24.04-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js_22.x-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Rootless](https://img.shields.io/badge/Rootless_Container-00ADD8?style=for-the-badge&logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
 A fully self-contained, Dockerized QuakeJS server running on Ubuntu 24.04 and Node.js 22.x LTS
+
+**🔒 This container runs as a non-root user for enhanced security**
 
 </div>
 
@@ -23,6 +26,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 - 🚀 Upgraded to **Node.js 22.x LTS** for better performance and security
 - 📦 Fully self-contained with all game assets bundled
 - 🔒 No external content servers required
+- 🛡️ **Runs as non-root user** for enhanced container security
 
 ## ⚠️ Security Notice
 
@@ -31,7 +35,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 1. **Legacy Quake III Arena game code** - The original game engine was not designed with modern security practices and contains known exploits
 2. **Deprecated NPM packages** - The QuakeJS implementation relies on old, unmaintained Node.js dependencies with known vulnerabilities
 
-**Recommendation:** While running this container using Podman as a non-root user significantly mitigates security risks through container isolation, **exposing this server directly to the public internet is not recommended**. The primary risk is exploitation of the game server itself, though container escape and host compromise are unlikely when using rootless containers with proper system hardening.
+**Recommendation:** This container now runs as a non-root user, significantly improving security through reduced privileges and better container isolation. However, **exposing this server directly to the public internet is still not recommended** due to vulnerabilities in the game code and dependencies.
 
 For internet-facing deployments, use a VPN, reverse proxy with authentication, or limit access to trusted IP ranges.
 
@@ -45,7 +49,7 @@ podman run -d \
   -e HTTP_PORT=8080 \
   -p 8080:80 \
   -p 27960:27960 \
-  awakenedpower/quakejs:latest
+  awakenedpower/quakejs-rootless:latest
 ```
 
 ### Using Docker Run
@@ -56,7 +60,7 @@ docker run -d \
   -e HTTP_PORT=8080 \
   -p 8080:80 \
   -p 27960:27960 \
-  awakenedpower/quakejs:latest
+  awakenedpower/quakejs-rootless:latest
 ```
 
 Then open your browser and navigate to `http://localhost:8080` to start playing!
@@ -70,7 +74,7 @@ version: '3.8'
 services:
   quakejs:
     container_name: quakejs
-    image: awakenedpower/quakejs:latest
+    image: awakenedpower/quakejs-rootless:latest
     environment:
       - HTTP_PORT=8080
     ports:
@@ -91,8 +95,8 @@ docker-compose up -d
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/JackBrenn/quakejs-docker.git
-cd quakejs-docker
+git clone https://github.com/JackBrenn/quakejs-rootless.git
+cd quakejs-rootless
 ```
 
 2. **Ensure line endings are correct** (convert CRLF to LF if needed):
@@ -101,7 +105,7 @@ cd quakejs-docker
 
 3. **Build the image:**
 ```bash
-podman build --add-host=content.quakejs.com:127.0.0.1 -t quakejs:latest .
+podman build --add-host=content.quakejs.com:127.0.0.1 -t quakejs-rootless:latest .
 ```
 
 4. **Run the container:**
@@ -111,15 +115,15 @@ podman run -d \
   -e HTTP_PORT=8080 \
   -p 8080:80 \
   -p 27960:27960 \
-  localhost/quakejs:latest
+  localhost/quakejs-rootless:latest
 ```
 
 ### Building with Docker
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/JackBrenn/quakejs-docker.git
-cd quakejs-docker
+git clone https://github.com/JackBrenn/quakejs-rootless.git
+cd quakejs-rootless
 ```
 
 2. **Ensure line endings are correct** (convert CRLF to LF if needed):
@@ -128,7 +132,7 @@ cd quakejs-docker
 
 3. **Build the image:**
 ```bash
-docker build --add-host=content.quakejs.com:127.0.0.1 -t awakenedpower/quakejs:latest .
+docker build --add-host=content.quakejs.com:127.0.0.1 -t awakenedpower/quakejs-rootless:latest .
 ```
 
 ## ⚙️ Configuration
@@ -152,20 +156,21 @@ While the legacy Quake III game code and deprecated NPM packages contain vulnera
 
 ### Recommended Security Measures
 
-1. **Use Podman with a non-root user** - Rootless containers provide strong isolation and make container escape highly unlikely
-2. **Keep your system updated** - Regular OS and package updates patch known vulnerabilities
-3. **Enable and configure a firewall** - Use `ufw`, `firewalld`, or `iptables` to restrict access
-4. **Limit network exposure** - Use VPN, reverse proxy with auth, or IP allowlisting for internet-facing deployments
-5. **Monitor logs** - Watch for unusual connection patterns or exploitation attempts
-6. **Consider SELinux/AppArmor** - Additional mandatory access controls provide defense-in-depth
+1. **Rootless container** - This image runs as a non-root user, providing strong isolation and making privilege escalation highly unlikely
+2. **Use Podman with a non-root user** - Rootless containers provide additional system-level isolation
+3. **Keep your system updated** - Regular OS and package updates patch known vulnerabilities
+4. **Enable and configure a firewall** - Use `ufw`, `firewalld`, or `iptables` to restrict access
+5. **Limit network exposure** - Use VPN, reverse proxy with auth, or IP allowlisting for internet-facing deployments
+6. **Monitor logs** - Watch for unusual connection patterns or exploitation attempts
+7. **Consider SELinux/AppArmor** - Additional mandatory access controls provide defense-in-depth
 
 ### Risk Assessment
 
 - **Game server exploitation**: Moderate risk - The primary attack vector, mitigated by network controls
-- **Container escape**: Low risk - Modern container runtimes (especially rootless) provide strong isolation
-- **Host compromise**: Very low risk - When using rootless Podman with a properly maintained system
+- **Container escape**: Very low risk - Non-root user inside container + modern container runtimes provide strong isolation
+- **Host compromise**: Very low risk - When using rootless containers with a properly maintained system
 
-The combination of rootless containers, system updates, and firewall rules creates multiple layers of defense that make successful exploitation significantly more difficult.
+The combination of non-root container user, rootless container runtime, system updates, and firewall rules creates multiple layers of defense that make successful exploitation significantly more difficult.
 
 ## 📝 What's Different?
 
@@ -175,6 +180,7 @@ This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://
 |-----------|----------|-----------|
 | Base OS | Ubuntu 20.04 | **Ubuntu 24.04** |
 | Node.js | 14.x | **22.x LTS** |
+| Container User | root | **non-root (quake)** |
 | Maintenance | Updated 2020 | **Updated 2025** |
 
 These updates provide:
@@ -183,6 +189,7 @@ These updates provide:
 - Better long-term compatibility
 - Modern package versions with security patches
 - Reduced attack surface through updated dependencies
+- Enhanced security through non-root container execution
 
 ## 🙏 Credits & Acknowledgments
 
@@ -206,6 +213,6 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 **Ready to frag?** Share the server URL with your friends and enjoy some classic Quake III Arena! 🚀
 
-*For best security: Use rootless Podman + firewall + regular updates*
+*For best security: Rootless container + Podman + firewall + regular updates*
 
 </div>
