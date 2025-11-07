@@ -13,8 +13,9 @@ RUN apt-get update && \
 COPY nodejs-lts/setup_22.x /tmp/setup_22.x
 RUN bash /tmp/setup_22.x
 
+COPY quakejs-master/ /quakejs/
 WORKDIR /quakejs
-COPY quakejs/ .
+
 RUN npm install
 RUN ls
 
