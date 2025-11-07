@@ -1,4 +1,4 @@
-FROM ubuntu:25.10
+FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=US/Eastern
