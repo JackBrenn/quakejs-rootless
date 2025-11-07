@@ -48,7 +48,7 @@ podman run -d \
   -e HTTP_PORT=8080 \
   -p 8080:8080 \
   -p 27960:27960 \
-  awakenedpower/quakejs-rootless:latest
+  docker.io/awakenedpower/quakejs-rootless:latest
 ```
 
 ### Using Docker Run
@@ -59,7 +59,7 @@ docker run -d \
   -e HTTP_PORT=8080 \
   -p 8080:8080 \
   -p 27960:27960 \
-  awakenedpower/quakejs-rootless:latest
+  docker.io/awakenedpower/quakejs-rootless:latest
 ```
 
 Then open your browser and navigate to `http://localhost:8080` to start playing!
@@ -73,7 +73,7 @@ version: '3.8'
 services:
   quakejs:
     container_name: quakejs
-    image: awakenedpower/quakejs-rootless:latest
+    image: docker.io/awakenedpower/quakejs-rootless:latest
     environment:
       - HTTP_PORT=8080
     ports:
