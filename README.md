@@ -25,7 +25,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 - 🚀 Upgraded to **Node.js 22.x LTS** for better performance and security
 - 📦 Fully self-contained with all game assets bundled
 - 🔒 No external content servers required
-- 🛡️ **Runs as non-root user** for enhanced container security
+- 🛡️ **Runs as non-root user (quakejs)** for enhanced container security
 
 ## ⚠️ Security Notice
 
@@ -34,7 +34,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 1. **Legacy Quake III Arena game code** - The original game engine was not designed with modern security practices and contains known exploits
 2. **Deprecated NPM packages** - The QuakeJS implementation relies on old, unmaintained Node.js dependencies with known vulnerabilities
 
-**Recommendation:** This container now runs as a non-root user, significantly improving security through reduced privileges and better container isolation. However, **exposing this server directly to the public internet is still not recommended** due to vulnerabilities in the game code and dependencies.
+**Recommendation:** This container now runs as a non-root user, significantly improving security through reduced privileges and better container isolation. However, **exposing this server directly to the internet is not recommended**.
 
 For internet-facing deployments, use a VPN, reverse proxy with authentication, or limit access to trusted IP ranges.
 
@@ -77,7 +77,7 @@ services:
     environment:
       - HTTP_PORT=8080
     ports:
-      - '8080:80'
+      - '8080:8080'
       - '27960:27960'
     restart: unless-stopped
 ```
@@ -112,7 +112,7 @@ podman build --add-host=content.quakejs.com:127.0.0.1 -t quakejs-rootless:latest
 podman run -d \
   --name quakejs \
   -e HTTP_PORT=8080 \
-  -p 8080:80 \
+  -p 8080:8080 \
   -p 27960:27960 \
   localhost/quakejs-rootless:latest
 ```
@@ -138,7 +138,7 @@ docker build --add-host=content.quakejs.com:127.0.0.1 -t awakenedpower/quakejs-r
 
 ### Environment Variables
 
-- `HTTP_PORT` - The HTTP port to serve the web interface (default: 80)
+- `HTTP_PORT` - The HTTP port to serve the web interface (default: 8080)
 
 ### Server Configuration
 
@@ -146,7 +146,7 @@ The server configuration can be customized by modifying `server.cfg`. Refer to t
 
 ### Ports
 
-- **80** (or your custom HTTP_PORT) - Web interface
+- **8080** (or your custom HTTP_PORT) - Web interface
 - **27960** - Game server (WebSocket)
 
 ## 🔐 Security Best Practices
@@ -155,7 +155,7 @@ While the legacy Quake III game code and deprecated NPM packages contain vulnera
 
 ### Recommended Security Measures
 
-1. **Rootless container** - This image runs as a non-root user, providing strong isolation and making privilege escalation highly unlikely
+1. **Rootless container** - This image runs as a non-root user (`quakejs`), providing strong isolation and making privilege escalation highly unlikely
 2. **Use Podman with a non-root user** - Rootless containers provide additional system-level isolation
 3. **Keep your system updated** - Regular OS and package updates patch known vulnerabilities
 4. **Enable and configure a firewall** - Use `ufw`, `firewalld`, or `iptables` to restrict access
@@ -179,7 +179,7 @@ This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://
 |-----------|----------|-----------|
 | Base OS | Ubuntu 20.04 | **Debian 13 Slim** |
 | Node.js | 14.x | **22.x LTS** |
-| Container User | root | **non-root (quake)** |
+| Container User | root | **non-root (quakejs)** |
 | Maintenance | Updated 2020 | **Updated 2025** |
 
 These updates provide:
