@@ -11,6 +11,8 @@
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-awakenedpower%2Fquakejs--rootless-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/awakenedpower/quakejs-rootless)
+
 A fully self-contained, Dockerized QuakeJS server running on Debian 13 and Node.js 22.x LTS
 
 **🔒 This container runs as a non-root user for enhanced security**
