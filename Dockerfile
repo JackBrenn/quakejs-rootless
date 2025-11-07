@@ -9,33 +9,35 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Create the non-root user early so we can use it in COPY commands
+RUN useradd -m -u 1000 sa_quakejs
+
 # Copy and run the local Node.js setup script
 COPY nodejs-lts/setup_22.x /tmp/setup_22.x
 RUN bash /tmp/setup_22.x
 
-COPY quakejs-master/ /quakejs/
+# Copy files with proper ownership from the start
+COPY --chown=sa_quakejs:sa_quakejs quakejs-master/ /quakejs/
 WORKDIR /quakejs
 
 RUN npm install
 RUN ls
 
-COPY server.cfg /quakejs/base/baseq3/server.cfg
-COPY server.cfg /quakejs/base/cpma/server.cfg
-COPY ./include/ioq3ded/ioq3ded.fixed.js /quakejs/build/ioq3ded.js
+COPY --chown=sa_quakejs:sa_quakejs server.cfg /quakejs/base/baseq3/server.cfg
+COPY --chown=sa_quakejs:sa_quakejs server.cfg /quakejs/base/cpma/server.cfg
+COPY --chown=sa_quakejs:sa_quakejs ./include/ioq3ded/ioq3ded.fixed.js /quakejs/build/ioq3ded.js
 
 RUN rm /var/www/html/index.html && cp /quakejs/html/* /var/www/html/
-COPY ./include/assets/ /var/www/html/assets
+COPY --chown=sa_quakejs:sa_quakejs ./include/assets/ /var/www/html/assets
 RUN ls /var/www/html
 
 WORKDIR /
 
-# Create a non-root user
-RUN useradd -m -u 1000 sa_quakejs && \
-    chown -R sa_quakejs:sa_quakejs /quakejs /var/www/html
+# Set ownership for web files
+RUN chown -R sa_quakejs:sa_quakejs /var/www/html
 
-ADD entrypoint.sh /entrypoint.sh
-RUN chmod 755 /entrypoint.sh && \
-    chown sa_quakejs:sa_quakejs /entrypoint.sh
+ADD --chown=sa_quakejs:sa_quakejs entrypoint.sh /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
 
 # Configure Apache to run on non-privileged port
 # Create necessary Apache directories and set permissions for non-root user
