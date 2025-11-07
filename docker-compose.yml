@@ -7,4 +7,4 @@ services:
         ports:
             - '8080:80'
             - '27960:27960'
-        image: 'treyyoder/quakejs:latest'
+        image: 'jackbrenn/quakejs-docker:latest'
