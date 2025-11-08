@@ -1,5 +1,8 @@
 ## QuakeJS configuration with WebSocket SSL support
-## Using the SWAG container as a reverse proxy
+## Using the SWAG container as a reverse proxy - In front of the quakejs-rootless container
+## This is seperate to the built in Nginx server in the container
+## Must be run as a seperate container along side quakejs-rootless
+## Internet > SWAG > quakejs-rootless
 ## https://docs.linuxserver.io/general/swag/
 
 # HTTP interface on port 443
