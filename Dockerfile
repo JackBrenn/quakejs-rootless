@@ -27,7 +27,9 @@ RUN mkdir -p /quakejs /home/quakejs/www && \
 
 # Clone quakejs as root but set ownership
 RUN cd / && \
-    git clone https://github.com/nerosketch/quakejs.git && \
+    #Build from own fork of nerosketch/quakejs.git repository
+    #git clone https://github.com/nerosketch/quakejs.git && \
+    git clone https://github.com/JackBrenn/quakejs.git && \
     chown -R quakejs:quakejs /quakejs
 
 # Switch to non-root user for npm install
