@@ -26,7 +26,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 **Key improvements in this fork:**
 - ✨ Updated to **Debian 13 Slim** base image
 - 🚀 Upgraded to **Node.js 22.x LTS** for better performance and security
-- 🔒 Updated NPM dependencies, **0 CRITICAL and 0 HIGH rated vulnerabilities** (Docker Scout)
+- 🔒 Updated NPM dependencies, **0 CRITICAL and 0 HIGH rated vulnerabilities** (Docker Scout 09.11.2025)
 - 🌐 **Production-ready Nginx-light web server** with security headers
 - 🛡️ **Runs as non-root user (quakejs)** for enhanced container security
 - 📦 Fully self-contained with all game assets bundled, no external content servers required
