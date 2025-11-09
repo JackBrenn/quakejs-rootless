@@ -1,6 +1,6 @@
 <div align="center">
 
-# QuakeJS Rootless Container
+# QuakeJS Rootless Project
 
 ### Play multiplayer Quake III Arena in your browser with Podman / Docker
 
