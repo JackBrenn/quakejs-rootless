@@ -26,17 +26,12 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 **Key improvements in this fork:**
 - ✨ Updated to **Debian 13 Slim** base image
 - 🚀 Upgraded to **Node.js 22.x LTS** for better performance and security
+- 🔒 Updated NPM dependencies, **0 CRITICAL and 0 HIGH rated vulnerabilities** (Docker Scout)
 - 🌐 **Production-ready Nginx web server** with security headers
-- 📦 Fully self-contained with all game assets bundled
-- 🔒 No external content servers required
 - 🛡️ **Runs as non-root user (quakejs)** for enhanced container security
+- 📦 Fully self-contained with all game assets bundled, no external content servers required
 
-## ⚠️ Security Notice
-
-**This project contains known security vulnerabilities from multiple sources:**
-
-1. **Legacy Quake III Arena game code** - The original game engine was not designed with modern security practices and contains known exploits
-2. **Deprecated NPM packages** - The QuakeJS implementation relies on old, unmaintained Node.js dependencies with known vulnerabilities
+## ⚠️ Security Recommendation
 
 **Recommendation:** This container now runs as a non-root user with a production-ready Nginx web server, significantly improving security through reduced privileges, better container isolation, and proper web server hardening. However, **exposing this server directly to the internet is still not recommended without additional security measures**.
 
