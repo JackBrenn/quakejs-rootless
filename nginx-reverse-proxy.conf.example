@@ -9,20 +9,21 @@
 ##
 ## Setup Instructions:
 ## 1. Copy this file to: /config/nginx/site-confs/quakejs.conf (in SWAG container)
-## 2. Replace 'quake.*' with your subdomain (e.g., quake.yourdomain.com)
-## 3. Replace 'example.com' with your actual domain in the WebSocket section
-## 4. Update certificate paths if using custom locations
-## 5. Verify 'quakejs' matches your container name (or update to match)
+## 2. Replace 'example.com' with your domain (e.g., quake.yourdomain.com or yourdomain.com)
+## 3. Update certificate paths if using custom locations
+## 4. Verify 'quakejs' matches your container name (or update to match)
+## 5. Verify that SWAG and quakejs-rootless are on the same Docker network
 ## 6. Restart SWAG container: docker restart swag
 ##
 ## Architecture: Internet → SWAG (443 + 27960) → quakejs-rootless (8080 + 27960)
+## Ports only required to be published on SWAG container
 ## Documentation: https://docs.linuxserver.io/general/swag/
 
 # HTTP interface on port 443
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name quake.*;
+    server_name example.com;
 
     include /config/nginx/ssl.conf;
 
