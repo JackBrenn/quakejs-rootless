@@ -33,7 +33,7 @@ This project provides a completely local QuakeJS server that runs entirely in Do
 
 ## 🎮 Live Demo
 
-**Try it now!** Experience QuakeJS in action at [oldschoolfrag.com](https://oldschoolfrag.com)
+**Experience QuakeJS** in action at [oldschoolfrag.com](https://oldschoolfrag.com)
 
 ## 🚀 Quick Start
 
@@ -147,29 +147,6 @@ The server configuration can be customized by modifying `server.cfg`.
 - **8080** (or your custom HTTP_PORT) - Web interface (Nginx)
 - **27960** - Game server (WebSocket)
 
-## 🔐 Security Best Practices
-
-While the legacy Quake III game code and deprecated NPM packages contain vulnerabilities, proper deployment practices significantly reduce the risk:
-
-### Recommended Security Measures
-
-1. **Rootless container** - This image runs as a non-root user (`quakejs`), providing strong isolation and making privilege escalation highly unlikely
-2. **Production web server** - Uses Nginx with security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection)
-3. **Use Podman with a non-root user** - Rootless containers provide additional system-level isolation
-4. **Keep your system updated** - Regular OS and package updates patch known vulnerabilities
-5. **Enable and configure a firewall** - Use `ufw`, `firewalld`, or `iptables` to restrict access
-6. **Limit network exposure** - Use VPN, reverse proxy with auth, or IP allowlisting for internet-facing deployments
-7. **Monitor logs** - Watch for unusual connection patterns or exploitation attempts
-8. **Consider SELinux/AppArmor** - Additional mandatory access controls provide defense-in-depth
-
-### Risk Assessment
-
-- **Game server exploitation**: Moderate risk - The primary attack vector, mitigated by network controls
-- **Container escape**: Very low risk - Non-root user inside container + modern container runtimes provide strong isolation
-- **Host compromise**: Very low risk - When using rootless containers with a properly maintained system
-
-The combination of non-root container user, production-ready web server, rootless container runtime, system updates, and firewall rules creates multiple layers of defense that make successful exploitation significantly more difficult.
-
 ## 📝 What's Different?
 
 This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://github.com/treyyoder/quakejs-docker) with the following updates:
@@ -184,16 +161,14 @@ This fork builds upon the excellent work of [@treyyoder/quakejs-docker](https://
 
 These updates provide:
 - Extended security support from Debian 13 Slim
-- Improved Node.js performance and features
-- Production-ready web server with security headers
-- Better long-term compatibility
-- Modern package versions with security patches
-- Reduced attack surface through updated dependencies
+- Updated to the latest version of Node.js
+- Updated all npm packages removing critical vulnerabilities
+- Reduced attack surface with NGINX Light
 - Enhanced security through non-root container execution
 
 ## 🙏 Credits & Acknowledgments
 
-This project is built on the shoulders of giants:
+This wouldn't be possible without these projects:
 
 - **[@treyyoder](https://github.com/treyyoder)** - Original [quakejs-docker](https://github.com/treyyoder/quakejs-docker) implementation that made fully local QuakeJS servers possible
 - **[@nerosketch](https://github.com/nerosketch)** - [QuakeJS fork](https://github.com/nerosketch/quakejs.git) with local server capabilities
@@ -203,9 +178,8 @@ This project is built on the shoulders of giants:
 
 MIT
 
-## 🎯 Contributing // Questions
+## 🎯 Questions
 
-- Contributions are welcome! Feel free to open issues or submit pull requests.
 - If you have questions, just open a GitHub issue and maybe I can help!
 
 ---
