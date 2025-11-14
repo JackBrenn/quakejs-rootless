@@ -87,7 +87,7 @@ docker-compose up -d
 
 ## 🛠️ Building from Source
 
-### Building with Podman (Recommended for Security)
+### Building with Podman (Recommended)
 
 1. **Clone the repository:**
 ```bash
