@@ -12,7 +12,7 @@ This container has a precompiled domain dependency which is no longer available 
 
 😞
 
-**Recommendation:** Keep an eye on alternative projects like ✨**[q3js.com](https://q3js.com/)**✨ for future updates.
+**Recommendation:** Keep an eye on alternative projects like ✨ **[q3js.com](https://q3js.com/)** ✨ for future updates.
 
 
 
