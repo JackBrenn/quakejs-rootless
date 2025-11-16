@@ -1,4 +1,4 @@
-## ⚠️ BROKEN: Broken quakejs.com Dependency
+### ⚠️ BROKEN: Broken quakejs.com Dependency
 
 This container has a precompiled dependency on **quakejs.com**, which is no longer available online. This causes the container to fail on startup with connection errors.
 
@@ -6,7 +6,7 @@ This container has a precompiled dependency on **quakejs.com**, which is no long
 
 # QuakeJS Rootless Project
 
-### Play multiplayer Quake III Arena in your browser with Podman / Docker
+## Play multiplayer Quake III Arena in your browser with Podman / Docker
 
 ![Podman](https://img.shields.io/badge/Podman-892CA0?style=for-the-badge&logo=podman&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
