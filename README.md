@@ -4,15 +4,11 @@
 
 ### ⚠️ BROKEN
 
-This container has a precompiled domain dependency which is no longer available online. Although this dependency is not needed for core functionality, the hardcoded connection attempt causes the container to fail on startup.
+Container fails to start due to a hardcoded domain dependency in the precompiled ioquake3/quakejs fork. The domain is offline and baked into the binary, causing startup failure.
 
-**Why it's broken:** The application tries to connect to a precompiled offline service during initialization.
+**Fix not feasible:** Recompiling is out of scope—this project only packages existing work as a rootless container.
 
-**Why we can't fix it easily:** Recompiling the application is out of scope for this project (I just wanted to package already great work as a rootless container).
-
-😞
-
-**Recommendation:** Keep an eye on alternative projects like ✨ **[q3js.com](https://q3js.com/)** ✨ for future updates.
+**Alternative:** Check ✨ **[q3js.com](https://q3js.com/)** ✨ for updated implementations.
 
 
 
