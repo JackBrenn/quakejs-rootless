@@ -10,9 +10,11 @@ This container has a precompiled domain dependency which is no longer available 
 
 **Why we can't fix it easily:** Recompiling the application is out of scope for this project (I just wanted to package already great work as a rootless container).
 
+😞
+
 **Recommendation:** Keep an eye on alternative projects like **[q3js.com](https://q3js.com/)** for future updates.
 
-😞
+
 
 # QuakeJS Rootless Project
 
