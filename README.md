@@ -2,7 +2,7 @@
 
 <div align="center">
 
-### ⚠️ BROKEN: quakejs.com Dependency
+### ⚠️ BROKEN
 
 This container has a precompiled dependency which is no longer available online. Although this dependency is not needed for core functionality, the hardcoded connection attempt causes the container to fail on startup.
 
