@@ -1,17 +1,7 @@
 
 
 <div align="center">
-
-### ⚠️ BROKEN For The Time Being
-
-Container fails to start due to a hardcoded domain dependency in the precompiled ioquake3/quakejs fork. The domain is offline and baked into the binary, causing startup failure.
-
-**Fix:** Recompiling is out of scope—this project only packages existing work as a rootless container. But I will see if there is a new QuakeJS project that i can containerize
-
-**Alternative:** Check ✨ **[q3js.com](https://q3js.com/)** ✨ for updated implementations.
-
-
-
+  
 # QuakeJS Rootless Project
 
 ## Play multiplayer Quake III Arena in your browser with Podman / Docker
