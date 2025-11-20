@@ -1,6 +1,7 @@
 
 
 <div align="center">
+  
 ## 🚀 A Better Alternative Exists!
 
 **Use [lklacar/q3js](https://github.com/lklacar/q3js) instead** - it's a more modern and feature-rich implementation.
