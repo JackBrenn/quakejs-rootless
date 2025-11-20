@@ -1,12 +1,15 @@
 
 
 <div align="center">
-> [!NOTE]
-> **🚀 A better alternative exists!**
-> 
-> I recommende **[lklacar/q3js](https://github.com/lklacar/q3js)** is a more modern and feature-rich implementation that does this much better. I highly recommend using it instead!
-> 
-> This repository is no longer actively due to unforseen complications with the forked codebase maintained.
+## 🚀 A Better Alternative Exists!
+
+**Use [lklacar/q3js](https://github.com/lklacar/q3js) instead** - it's a more modern and feature-rich implementation.
+
+### About This Repository
+
+This is a container rebuild of [quakejs-docker](https://github.com/treyyoder/quakejs-docker), but that project depended on quakejs.com, which recently introduced breaking changes.
+
+**This repository is no longer maintained.**
 
 ---
   
