@@ -1,6 +1,14 @@
 
 
 <div align="center">
+> [!NOTE]
+> **🚀 A better alternative exists!**
+> 
+> I recommende **[lklacar/q3js](https://github.com/lklacar/q3js)** is a more modern and feature-rich implementation that does this much better. I highly recommend using it instead!
+> 
+> This repository is no longer actively due to unforseen complications with the forked codebase maintained.
+
+---
   
 # QuakeJS Rootless Project
 
