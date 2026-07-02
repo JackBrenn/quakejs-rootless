@@ -1,7 +1,7 @@
 #Builder
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:593604b45cd04f51a55bbc610fc3ca395c195a23aab224bc8a77055f5cb6fc8d AS builder
+FROM dhi.io/debian-base@sha256:57c88d9180b30314a04650426af8d4301c5c9738e4c5672a1db99a03f6a54721 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
@@ -37,7 +37,7 @@ RUN npm install --omit=dev
 
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:f4bc9e33c6c4042160a818f3662beead771b9902996328d3f72862efa56b6862
+FROM dhi.io/debian-base@sha256:5a539a75a33da9019e8f667c3e7e3e1eb00b52a69cace95b0225f8134aee17b3
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
