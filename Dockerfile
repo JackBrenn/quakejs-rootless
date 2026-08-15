@@ -1,7 +1,7 @@
 #Builder
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:d33cf549d45223143a9c10670403cd52f422518b9f7b934b2b2abf4d73653399 AS builder
+FROM dhi.io/debian-base@sha256:503cd6ca90125a687c0974938d54f5664dc64f360ca4a774a2e126d366ab16bb AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
