@@ -7,6 +7,9 @@ on:
       - 'entrypoint.sh'
       - 'nginx.conf'
       - 'server.cfg'
+      - 'COPYING'
+      - 'LICENSE.MIT'
+      - 'README.md'
       - 'include/**'
       - 'quakejs/**'
       - '.helm/**'
@@ -59,6 +62,10 @@ jobs:
             type=raw,value={{date 'YYYY.MM.DD.HHmm' tz='UTC'}}
             type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
             type=raw,value=dev,enable=${{ github.ref_name != github.event.repository.default_branch }}
+          labels: |
+            org.opencontainers.image.licenses=GPL-2.0-or-later
+            org.opencontainers.image.title=quakejs-rootless
+            org.opencontainers.image.description=Rootless QuakeJS server. Contains GPL-2.0-or-later engine code derived from ioquake3.
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

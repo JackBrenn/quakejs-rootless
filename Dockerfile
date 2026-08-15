@@ -86,6 +86,8 @@ RUN mkdir -p \
         /tmp/scgi_temp
 
 COPY --chown=65532:65532 --chmod=755 entrypoint.sh /entrypoint.sh
+COPY --chown=65532:65532 COPYING LICENSE.MIT README.md /usr/share/doc/quakejs-rootless/
+LABEL org.opencontainers.image.licenses="GPL-2.0-or-later"
 
 EXPOSE 8080
 

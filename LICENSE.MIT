@@ -1,0 +1,58 @@
+This MIT licence covers ONLY the original packaging and deployment work in this
+repository. It does not, and cannot, apply to the repository as a whole.
+
+The project as distributed is a combined work that includes components derived
+from the Quake III Arena engine (id Software, via ioquake3 and QuakeJS), which
+are licensed under the GNU General Public License, version 2 or later. See
+COPYING for the GPL text and the "Licensing" section of README.md for the full
+breakdown.
+
+Covered by this licence:
+
+    Dockerfile
+    docker-compose.yml
+    entrypoint.sh
+    nginx.conf
+    nginx-reverse-proxy.conf.example
+    server.cfg
+    .helm/**
+    .github/workflows/**
+    modifications made in this repository to the QuakeJS Node.js server and
+    tooling under quakejs/bin/, quakejs/lib/, quakejs/base/ and
+    quakejs/package.json, which upstream distributes under the MIT licence
+
+NOT covered by this licence:
+
+    quakejs/build/ioq3ded.js      - Emscripten build of ioquake3, GPL-2.0-or-later
+    quakejs/html/ioquake3.js      - Emscripten build of ioquake3, GPL-2.0-or-later
+    include/assets/**             - Quake III Arena game content and third-party
+                                    maps and mods; proprietary, see README.md
+
+Where a file in this repository is available under both this licence and the
+GPL, you may use it under either at your option. The combined work, and any
+container image built from this repository, must be redistributed under the
+terms of the GPL.
+
+---
+
+MIT License
+
+Copyright (c) 2026 Jack Brennan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
