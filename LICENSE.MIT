@@ -18,7 +18,7 @@ Covered by this licence:
     .helm/**
     .github/workflows/**
     modifications made in this repository to the QuakeJS Node.js server and
-    tooling under quakejs/bin/, quakejs/lib/, quakejs/base/ and
+    tooling under quakejs/bin/, quakejs/base/ and
     quakejs/package.json, which upstream distributes under the MIT licence
 
 NOT covered by this licence:
