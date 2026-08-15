@@ -1,3 +1,20 @@
+// This file is an Emscripten build of ioquake3, the Quake III Arena engine.
+// Copyright (C) 1999-2005 id Software, Inc. and ioquake3 contributors.
+// Copyright (C) 2013 Anthony Pesch (QuakeJS Emscripten port).
+//
+// This program is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 2 of the License, or (at your option)
+// any later version. See COPYING in the root of this repository.
+//
+// Modified in quakejs-rootless -- https://github.com/JackBrenn/quakejs-rootless
+// 2026-05-30   ws 8.x compatibility: WebSocket message handler uses the isBinary
+//              argument instead of the flags.binary argument used by ws 1.x.
+// (inherited)  demo EULA prompt made non-interactive, from
+//              treyyoder/quakejs-docker. Applies to ioq3ded.js only.
+//
+// Corresponding source: https://github.com/inolen/ioq3 and
+// https://github.com/begleysm/ioq3, plus the changes listed above.
 // Note: For maximum-speed code, see "Optimizing Code" on the Emscripten wiki, https://github.com/kripken/emscripten/wiki/Optimizing-Code
 // Note: Some Emscripten settings may limit the speed of the generated code.
 // The Module object: Our interface to the outside world. We import
