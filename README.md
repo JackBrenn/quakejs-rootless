@@ -251,7 +251,7 @@ under either licence at your option.
 | Component | Origin | Licence |
 |---|---|---|
 | `quakejs/build/ioq3ded.js`, `quakejs/html/ioquake3.js` | id Software → ioquake3 → QuakeJS (Emscripten build) | GPL-2.0-or-later |
-| `quakejs/bin/`, `quakejs/lib/`, `quakejs/package.json` | QuakeJS (Anthony Pesch) | MIT, per upstream `package.json` |
+| `quakejs/bin/`, `quakejs/html/` (except `ioquake3.js`), `quakejs/base/`, `quakejs/package.json` | QuakeJS (Anthony Pesch), with changes from this repository | MIT |
 | `Dockerfile`, `entrypoint.sh`, `nginx.conf`, `server.cfg`, `.helm/`, `.github/workflows/` | This repository | MIT (`LICENSE.MIT`) |
 | `include/assets/` | id Software and third-party map/mod authors | Proprietary — see [Game content](#game-content) |
 
