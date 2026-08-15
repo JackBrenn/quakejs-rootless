@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "bin": {
     "quakejs-content": "bin/content.js",
-    "quakejs-master": "bin/master.js",
-    "quakejs-repak": "bin/repak.js"
+    "quakejs-master": "bin/master.js"
   },
   "repository": {
     "type": "git",
