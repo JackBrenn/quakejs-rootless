@@ -97,6 +97,60 @@
 				ioq3.callMain(args);
 			};
 		</script>
+		<script type="text/javascript">
+			// Surface the project source URL on the demo EULA screen.
+			// GPLv2 section 3 asks that anyone receiving the software can find the
+			// corresponding source; this is the first screen a player sees.
+			//
+			// Injected from here rather than edited into ioquake3.js on purpose:
+			// that file is the GPL-covered Emscripten engine build, so editing it
+			// would need a change notice under GPLv2 section 2(a), and the edit
+			// would be lost the next time the build is re-vendored from upstream.
+			(function () {
+				var SOURCE_URL = 'https://github.com/JackBrenn/quakejs-rootless';
+
+				function addSourceLink() {
+					var inner = document.getElementById('eula-frame-inner');
+					if (!inner || document.getElementById('source-link')) {
+						return false;
+					}
+
+					var p = document.createElement('p');
+					p.id = 'source-link';
+
+					var a = document.createElement('a');
+					a.href = SOURCE_URL;
+					a.target = '_blank';
+					a.rel = 'noopener';
+					a.textContent = 'github.com/JackBrenn/quakejs-rootless';
+
+					p.appendChild(document.createTextNode('Server software: '));
+					p.appendChild(a);
+					p.appendChild(document.createTextNode(
+						' \u2014 container packaging of QuakeJS by Anthony Pesch, ' +
+						'engine derived from ioquake3, GPL-2.0-or-later. ' +
+						'Game content is id Software and third-party data under ' +
+						'their own terms, not GPL.'));
+					inner.appendChild(p);
+					return true;
+				}
+
+				if (addSourceLink()) {
+					return;
+				}
+
+				var observer = new MutationObserver(function () {
+					if (addSourceLink()) {
+						observer.disconnect();
+					}
+				});
+
+				observer.observe(document.documentElement, {
+					childList: true,
+					subtree: true
+				});
+			})();
+		</script>
 	</head>
 	<body>
 		<div id="viewport-frame"></div>

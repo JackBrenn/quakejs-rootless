@@ -49,3 +49,17 @@ html, body {
 	width: 100%;
 	height: 100%;
 }
+
+#source-link {
+	margin-top: 1.5em;
+	font-size: 0.9em;
+	color: #999;
+}
+
+#source-link a {
+	color: #ccc;
+}
+
+#source-link a:visited {
+	color: #ccc;
+}
