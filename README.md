@@ -26,6 +26,30 @@ To achieve this, the original game code was refactored to support modern npm pac
 | Container User | **non-root** |
 | npm packages | **Modernized, with compatibility fixes** |
 
+<details>
+<summary><b>What "modernized" means</b></summary>
+
+The QuakeJS server and tooling were written against Node 0.10-era packages, five
+of which are now unmaintained. They have been removed in favour of Node natives
+or maintained equivalents, and the two upgrades that changed public APIs were
+followed through in the calling code:
+
+| Was | Now | Notes |
+|---|---|---|
+| `optimist` | `yargs` 18 | argument parsing across all `bin/` entry points |
+| `wrench` | native `fs` | recursive `readdirSync`, `mkdirSync`, `rmSync` |
+| `execSync` (package) | native `spawnSync` | shimmed to keep the old `{code, stdout}` return shape |
+| `temp` | native `fs.mkdtempSync` | |
+| `express` 3.3 | `express` 5.2 | `res.sendfile` → `res.sendFile`; `express.compress` replaced by the standalone `compression` package |
+| `ws` 0.4 | `ws` 8.21 | `upgradeReq` replaced by the handler's `req` argument; `flags.binary` → `isBinary` |
+
+Also bumped: async, buffer-crc32, ejs, send, underscore, winston.
+
+The `ws` change is the only one that reaches into GPL-covered engine code; see
+[Licensing](#licensing).
+
+</details>
+
 ### Out of Scope
 - Recompile original game code from ioquake3 (still old game code)
 - Introduce new functionality
