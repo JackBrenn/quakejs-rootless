@@ -1,25 +1,45 @@
 name: Release
 
-# Tag-driven releases. Push an annotated tag to cut a release:
-#   git tag -a v1.1.0 -m "Release v1.1.0" && git push origin v1.1.0
+# Every push to master publishes a release: the workflow works out the next
+# version, tags it, builds, signs and publishes the image and the chart.
 #
-# Deliberately a separate workflow from ci.yaml: no `paths:` filter, because
-# path filtering interacts badly with tag pushes and a release must never be
-# silently skipped.
+# The tag is an OUTPUT here, not a prerequisite. It exists so a published
+# version can be traced back to a point in git history; you never create one
+# by hand.
+#
+# To land a commit without cutting a release, put [skip release] in the
+# commit message.
 
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # pre-releases: v1.2.0-rc1
+    branches:
+      - master
+    paths:
+      - 'Dockerfile'
+      - 'entrypoint.sh'
+      - 'nginx.conf'
+      - 'server.cfg'
+      - 'COPYING'
+      - 'LICENSE.MIT'
+      - 'README.md'
+      - 'include/**'
+      - 'quakejs/**'
+      - '.helm/**'
+      - '.github/workflows/release.yaml'
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Existing tag to re-release, e.g. v1.2.0'
-        required: true
+      bump:
+        description: 'Which part of the version to increment'
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      version:
+        description: 'Or pin an exact version, e.g. 1.2.0 (overrides the bump)'
+        required: false
+        type: string
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   # Never cancel a release mid-publish: a cancelled run can leave a pushed
   # image unsigned and unattested.
   cancel-in-progress: false
@@ -28,8 +48,91 @@ permissions:
   contents: read
 
 jobs:
+  create-tag:
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     # required to push the new tag
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Compute and push the next tag
+        id: tag
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if [ -n "${{ inputs.version }}" ]; then
+            version="${{ inputs.version }}"
+            version="${version#v}"
+          else
+            # Highest existing vX.Y.Z, ignoring pre-releases so an rc can never
+            # become the base for the next stable version.
+            latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' \
+                     | grep -Ev -- '-' \
+                     | sed 's/^v//' \
+                     | sort -V \
+                     | tail -n1)
+            latest="${latest:-0.0.0}"
+
+            # Manual runs use the dropdown. Pushes default to a patch bump,
+            # overridable with #minor or #major in the commit message.
+            bump="${{ inputs.bump }}"
+            if [ -z "$bump" ]; then
+              msg=$(git log -1 --pretty=%B)
+              case "$msg" in
+                *'#major'*) bump=major ;;
+                *'#minor'*) bump=minor ;;
+                *)          bump=patch ;;
+              esac
+            fi
+            echo "Latest release: v$latest, bump: $bump"
+
+            IFS='.' read -r major minor patch <<< "$latest"
+            case "$bump" in
+              major) major=$((major+1)); minor=0; patch=0 ;;
+              minor) minor=$((minor+1)); patch=0 ;;
+              patch) patch=$((patch+1)) ;;
+              *) echo "::error::unknown bump '$bump'"; exit 1 ;;
+            esac
+
+            # Step over any version already claimed by a tag, so a race or a
+            # manually-created tag cannot wedge the pipeline.
+            while git rev-parse -q --verify "refs/tags/v$major.$minor.$patch" >/dev/null; do
+              patch=$((patch+1))
+            done
+            version="$major.$minor.$patch"
+          fi
+
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$version' is not valid SemVer."
+            exit 1
+          fi
+
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::tag $tag already exists."
+            exit 1
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "$tag"
+
+          echo "Created $tag"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   release-image:
     runs-on: ubuntu-latest
+    needs: [create-tag]
     permissions:
       contents: read
       packages: write
@@ -37,6 +140,7 @@ jobs:
       attestations: write    # actions/attest-build-provenance
     outputs:
       version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
       digest: ${{ steps.build.outputs.digest }}
       repository: ${{ steps.version.outputs.repository }}
       registry: ${{ steps.version.outputs.registry }}
@@ -48,15 +152,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ needs.create-tag.outputs.tag || github.ref }}
           fetch-depth: 0     # full history so release notes can be generated
 
       - name: Derive version and registry
         id: version
         run: |
           set -euo pipefail
-          ref_name="${{ inputs.tag || github.ref_name }}"
-          version="${ref_name#v}"
+          version="${{ needs.create-tag.outputs.version }}"
+          ref_name="v$version"
 
           # Helm chart versions must be strict SemVer with no leading 'v'.
           if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
@@ -69,10 +173,20 @@ jobs:
           [ "$host" = "github.com" ] && host="ghcr.io"
           repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
+          # Split out so the image tag list below does not depend on
+          # github.ref, which is a branch ref on a manual run.
+          base="${version%%-*}"
+          IFS='.' read -r v_major v_minor _ <<< "$base"
+          if [ "$version" = "$base" ]; then stable=true; else stable=false; fi
+
           {
             echo "version=$version"
+            echo "tag=$ref_name"
             echo "registry=$host"
             echo "repository=$host/$repo_lower"
+            echo "major=$v_major"
+            echo "minor=$v_major.$v_minor"
+            echo "stable=$stable"
           } >> "$GITHUB_OUTPUT"
           {
             echo "REGISTRY_HOST=$host"
@@ -96,10 +210,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}},enable=${{ !contains(github.ref_name, '-') }}
-            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.minor }},enable=${{ steps.version.outputs.stable == 'true' }}
+            type=raw,value=${{ steps.version.outputs.major }},enable=${{ steps.version.outputs.stable == 'true' }}
+            type=raw,value=latest,enable=${{ steps.version.outputs.stable == 'true' }}
             type=sha
           labels: |
             org.opencontainers.image.licenses=GPL-2.0-or-later
@@ -232,7 +346,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ needs.release-image.outputs.tag }}
 
       - name: Install Helm
         uses: azure/setup-helm@v5
@@ -339,10 +453,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          name: ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ needs.release-image.outputs.tag }}
+          name: ${{ needs.release-image.outputs.tag }}
           generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(needs.release-image.outputs.tag, '-') }}
           files: |
             artifacts/*.tgz
             artifacts/sbom.json
@@ -360,7 +474,7 @@ jobs:
 
             ```bash
             cosign verify \
-              --certificate-identity "${{ github.server_url }}/${{ github.repository }}/.github/workflows/release.yaml@refs/tags/${{ inputs.tag || github.ref_name }}" \
+              --certificate-identity "${{ github.server_url }}/${{ github.repository }}/.github/workflows/release.yaml@${{ github.ref }}" \
               --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
               ${{ needs.release-image.outputs.repository }}@${{ needs.release-image.outputs.digest }}
             ```
