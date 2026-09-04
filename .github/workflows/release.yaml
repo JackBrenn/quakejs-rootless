@@ -322,44 +322,6 @@ jobs:
           done
           echo "SBOM and provenance attestations present."
 
-      - name: Set up crane
-        uses: imjasonh/setup-crane@v0.4
-
-      - name: Re-point release tags so they outrank the signature manifest
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          set -euo pipefail
-          # GHCR shows whatever was written most recently as the package's
-          # "Latest", and cosign signatures are pushed AFTER the image they
-          # sign -- so the package page ends up advertising a signature as the
-          # thing to docker pull. Re-writing the real tags last fixes the
-          # display order.
-          #
-          # crane tag, not `buildx imagetools create`: imagetools REBUILDS the
-          # index and can emit a different digest, which would leave these tags
-          # pointing at something the signature above does not cover. crane tag
-          # is a pure ref update, so the digest is preserved.
-          src="${REGISTRY_HOST}/${REPOSITORY_LOWER}@${DIGEST}"
-          tags="${VERSION}"
-          if [ "${{ steps.version.outputs.stable }}" = "true" ]; then
-            tags="$tags ${{ steps.version.outputs.minor }} ${{ steps.version.outputs.major }} latest"
-          fi
-
-          for t in $tags; do
-            crane tag "$src" "$t"
-          done
-
-          # Fail loudly if any tag drifted off the signed digest.
-          for t in $tags; do
-            got=$(crane digest "${REGISTRY_HOST}/${REPOSITORY_LOWER}:${t}")
-            if [ "$got" != "$DIGEST" ]; then
-              echo "::error::tag '$t' resolves to $got, expected $DIGEST"
-              exit 1
-            fi
-          done
-          echo "Re-pointed and verified: $tags"
-
       - name: Upload SBOM and provenance
         uses: actions/upload-artifact@v4
         with:
