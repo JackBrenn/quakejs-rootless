@@ -156,7 +156,7 @@ jobs:
           echo "REPOSITORY_LOWER=$repo_lower" >> "$GITHUB_ENV"
 
       - name: Install Helm
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
 
       - name: Login to OCI registry for Helm
         run: |
