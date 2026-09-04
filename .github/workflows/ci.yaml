@@ -262,6 +262,17 @@ jobs:
           digest=$(grep -oE 'sha256:[0-9a-f]{64}' push.log | head -n1)
           echo "ref=${chart_repo#oci://}/${chart_name}@${digest}" >> "$GITHUB_OUTPUT"
 
+      - name: Login to OCI registry for cosign
+        # helm registry login writes to Helm's own credential store
+        # (~/.config/helm/registry/config.json). cosign reads the Docker
+        # keychain (~/.docker/config.json), so it needs its own login.
+        if: env.PUSH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY_HOST }}
+          username: ${{ github.actor }}
+          password: ${{ env.REGISTRY_ACCESS_TOKEN }}
+
       - name: Install cosign
         if: env.PUSH == 'true'
         uses: sigstore/cosign-installer@v4.1.2
