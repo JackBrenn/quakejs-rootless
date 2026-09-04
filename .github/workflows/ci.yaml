@@ -97,7 +97,9 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value={{date 'YYYY.MM.DD.HHmm' tz='UTC'}}
-            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+            # 'latest' is deliberately NOT set here: release.yaml owns it, so a
+            # post-release commit to master cannot silently drag it back onto an
+            # unreleased build.
             type=raw,value=dev,enable=${{ github.ref_name != github.event.repository.default_branch }}
             type=sha
           labels: |
@@ -130,11 +132,8 @@ jobs:
         id: export-vars
         run: |
           set -euo pipefail
-          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            tag="latest"
-          else
-            tag="dev"
-          fi
+          # Matches docker/metadata-action's type=sha format (sha-<7 chars>).
+          tag="sha-$(git rev-parse --short=7 HEAD)"
           echo "repository=${REGISTRY_HOST}/${REPOSITORY_LOWER}" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
@@ -252,11 +251,9 @@ jobs:
         run: |
           set -euo pipefail
           chart_name=$(yq -r '.name' .helm/Chart.yaml)
-          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            chart_repo="oci://${REGISTRY_HOST}/${REPOSITORY_LOWER}/helm"
-          else
-            chart_repo="oci://${REGISTRY_HOST}/${REPOSITORY_LOWER}/helm/dev"
-          fi
+          # Always the dev channel, including on the default branch, so that
+          # .../helm holds nothing but tagged releases.
+          chart_repo="oci://${REGISTRY_HOST}/${REPOSITORY_LOWER}/helm/dev"
           helm package .helm --destination dist
           helm push "dist/${chart_name}-${DEV_VERSION}.tgz" "$chart_repo" 2>&1 | tee push.log
           digest=$(grep -oE 'sha256:[0-9a-f]{64}' push.log | head -n1)
