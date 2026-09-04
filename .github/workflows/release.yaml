@@ -285,6 +285,16 @@ jobs:
             echo "digest=$digest"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Login to OCI registry for cosign
+        # helm registry login writes to Helm's own credential store
+        # (~/.config/helm/registry/config.json). cosign reads the Docker
+        # keychain (~/.docker/config.json), so it needs its own login.
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY_HOST }}
+          username: ${{ github.actor }}
+          password: ${{ env.REGISTRY_ACCESS_TOKEN }}
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2
 
