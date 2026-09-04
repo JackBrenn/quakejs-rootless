@@ -244,6 +244,10 @@ jobs:
       - name: Build and push image
         id: build
         uses: docker/build-push-action@v7
+        env:
+          # Suppresses the auto-uploaded '*.dockerbuild' build-record artifact.
+          # It is not a zip, so anything downloading all artifacts trips over it.
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           platforms: linux/amd64
@@ -444,11 +448,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download release artifacts
+      - name: Download packaged chart
         uses: actions/download-artifact@v5
         with:
+          name: helm-chart
           path: artifacts
-          merge-multiple: true
+
+      - name: Download SBOM and provenance
+        uses: actions/download-artifact@v5
+        with:
+          name: image-attestations
+          path: artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
