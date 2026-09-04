@@ -35,6 +35,20 @@ COPY ./quakejs /quakejs
 WORKDIR /quakejs
 RUN npm ci --omit=dev
 
+# Make the browser engine's hardcoded URLs scheme-aware so that clients
+# served over TLS fetch assets and connect using the page's own protocol,
+# instead of relying on the CSP upgrade-insecure-requests header surviving
+# the whole reverse-proxy chain. The grep assertions fail the build if the
+# rewrite is incomplete. See the provenance header in html/ioquake3.js and
+# README 'Modifications to GPL-covered files'.
+RUN sed -i \
+        -e "s|'http://' + root|'//' + root|g" \
+        -e "s|'http://' + fs_cdn|'//' + fs_cdn|g" \
+        -e "s|'ws://' + addr|((location.protocol==='https:')?'wss://':'ws://') + addr|g" \
+        html/ioquake3.js \
+    && ! grep -q "'http://'" html/ioquake3.js \
+    && ! grep -q "'ws://' + addr" html/ioquake3.js
+
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
 FROM dhi.io/debian-base@sha256:f4f177aca22c32d82d06f53e1d624fa2e0ad12af6d9829b12b69f621d1a679d5
@@ -90,6 +104,9 @@ COPY --chown=65532:65532 COPYING LICENSE.MIT README.md /usr/share/doc/quakejs-ro
 LABEL org.opencontainers.image.licenses="GPL-2.0-or-later"
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:8080/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 USER nonroot
 

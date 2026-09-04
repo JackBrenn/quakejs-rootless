@@ -304,6 +304,14 @@ compiled engine files in this tree differ from upstream QuakeJS as follows:
 **`quakejs/html/ioquake3.js`**
 
 1. The same `ws` 8.x `isBinary` change as above. Made in this repository.
+2. At image build time the `Dockerfile` rewrites the three hardcoded
+   `http://`/`ws://` URL literals to be scheme-aware (using the page's own
+   protocol), so clients served over TLS fetch assets and connect over
+   `https:`/`wss:` without depending on the
+   `Content-Security-Policy: upgrade-insecure-requests` header surviving
+   the reverse-proxy chain. The `Dockerfile` asserts after the rewrite that
+   no hardcoded `http://`/`ws://` literals remain, and the CSP header is
+   kept as a belt-and-braces measure.
 
 No other changes have been made to engine-derived files.
 

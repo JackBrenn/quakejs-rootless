@@ -10,6 +10,14 @@
 // Modified in quakejs-rootless -- https://github.com/JackBrenn/quakejs-rootless
 // 2026-05-30   ws 8.x compatibility: WebSocket message handler uses the isBinary
 //              argument instead of the flags.binary argument used by ws 1.x.
+// 2026-09-04   Scheme-aware URLs (applied at image build time by the
+//              Dockerfile, not in this source file): the hardcoded
+//              http:// URL prefixes on the asset and manifest fetches, and
+//              the ws:// connect-URL literal, are rewritten to use the
+//              page's own protocol, so clients served over TLS fetch
+//              assets and connect over https:/wss: without relying on a
+//              'Content-Security-Policy: upgrade-insecure-requests'
+//              header surviving the reverse-proxy chain.
 // (inherited)  demo EULA prompt made non-interactive, from
 //              treyyoder/quakejs-docker. Applies to ioq3ded.js only.
 //
