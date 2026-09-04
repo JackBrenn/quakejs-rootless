@@ -1,0 +1,374 @@
+name: Release
+
+# Tag-driven releases. Push an annotated tag to cut a release:
+#   git tag -a v1.1.0 -m "Release v1.1.0" && git push origin v1.1.0
+#
+# Deliberately a separate workflow from ci.yaml: no `paths:` filter, because
+# path filtering interacts badly with tag pushes and a release must never be
+# silently skipped.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # pre-releases: v1.2.0-rc1
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to re-release, e.g. v1.2.0'
+        required: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  # Never cancel a release mid-publish: a cancelled run can leave a pushed
+  # image unsigned and unattested.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write        # keyless cosign signing
+      attestations: write    # actions/attest-build-provenance
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
+      repository: ${{ steps.version.outputs.repository }}
+      registry: ${{ steps.version.outputs.registry }}
+    env:
+      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+      DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+      DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0     # full history so release notes can be generated
+
+      - name: Derive version and registry
+        id: version
+        run: |
+          set -euo pipefail
+          ref_name="${{ inputs.tag || github.ref_name }}"
+          version="${ref_name#v}"
+
+          # Helm chart versions must be strict SemVer with no leading 'v'.
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Tag '$ref_name' is not a SemVer release tag (expected vMAJOR.MINOR.PATCH)."
+            exit 1
+          fi
+
+          host="${GITHUB_SERVER_URL#https://}"
+          host="${host#http://}"
+          [ "$host" = "github.com" ] && host="ghcr.io"
+          repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          {
+            echo "version=$version"
+            echo "registry=$host"
+            echo "repository=$host/$repo_lower"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "REGISTRY_HOST=$host"
+            echo "REPOSITORY_LOWER=$repo_lower"
+            echo "VERSION=$version"
+          } >> "$GITHUB_ENV"
+
+      - name: Require Docker Hardened Images credentials
+        run: |
+          set -euo pipefail
+          # The Dockerfile pulls its base images from dhi.io, which needs auth.
+          # Fail loudly here rather than with a confusing 'FROM' error later.
+          if [ -z "${DHI_USERNAME}" ] || [ -z "${DHI_TOKEN}" ]; then
+            echo "::error::DHI_USERNAME/DHI_TOKEN secrets are required to pull the dhi.io base images."
+            exit 1
+          fi
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+            type=sha
+          labels: |
+            org.opencontainers.image.licenses=GPL-2.0-or-later
+            org.opencontainers.image.title=quakejs-rootless
+            org.opencontainers.image.description=Rootless QuakeJS server. Contains GPL-2.0-or-later engine code derived from ioquake3.
+            org.opencontainers.image.version=${{ env.VERSION }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to OCI registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY_HOST }}
+          username: ${{ github.actor }}
+          password: ${{ env.REGISTRY_ACCESS_TOKEN }}
+
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@v4
+        with:
+          registry: dhi.io
+          username: ${{ env.DHI_USERNAME }}
+          password: ${{ env.DHI_TOKEN }}
+
+      - name: Get git commit timestamp
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}:buildcache
+          # mode=max records the full build graph (every stage, every build arg),
+          # not just the final layer. mode=min is the default and is close to useless
+          # for auditing a multi-stage build like this one.
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
+
+      - name: Guard against an empty digest
+        run: |
+          set -euo pipefail
+          if [ -z "${{ steps.build.outputs.digest }}" ]; then
+            echo "::error::build-push-action produced no digest; refusing to continue."
+            exit 1
+          fi
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Install cosign
+        # Pinned: the repo publishes no floating 'v4' tag (tags are v4.0.0,
+        # v4.1.0, v4.1.1, v4.1.2 ...).
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign the published image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes \
+            -a "repo=${{ github.repository }}" \
+            -a "ref=${{ github.ref_name }}" \
+            -a "sha=${{ github.sha }}" \
+            "${REGISTRY_HOST}/${REPOSITORY_LOWER}@${DIGEST}"
+
+      - name: Verify the signature
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          # Prove the signature is actually verifiable before the release is
+          # announced. Without this the pipeline can publish broken signatures
+          # for months without anyone noticing.
+          cosign verify \
+            --certificate-identity "${GITHUB_SERVER_URL}/${{ github.repository }}/.github/workflows/release.yaml@${{ github.ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${REGISTRY_HOST}/${REPOSITORY_LOWER}@${DIGEST}" > /dev/null
+          echo "Signature verified."
+
+      - name: Verify SBOM and provenance attestations are present
+        run: |
+          set -euo pipefail
+          ref="${REGISTRY_HOST}/${REPOSITORY_LOWER}@${{ steps.build.outputs.digest }}"
+          docker buildx imagetools inspect "$ref" --format '{{ json .SBOM }}'       > sbom.json
+          docker buildx imagetools inspect "$ref" --format '{{ json .Provenance }}' > provenance.json
+          for f in sbom.json provenance.json; do
+            if [ ! -s "$f" ] || [ "$(cat "$f")" = "null" ]; then
+              echo "::error::$f attestation is missing from the published image."
+              exit 1
+            fi
+          done
+          echo "SBOM and provenance attestations present."
+
+      - name: Upload SBOM and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-attestations
+          path: |
+            sbom.json
+            provenance.json
+
+  release-chart:
+    runs-on: ubuntu-latest
+    needs: [release-image]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      chart_digest: ${{ steps.push.outputs.digest }}
+      chart_name: ${{ steps.push.outputs.chart_name }}
+    env:
+      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.release-image.outputs.version }}
+      REGISTRY_HOST: ${{ needs.release-image.outputs.registry }}
+      IMAGE_REPOSITORY: ${{ needs.release-image.outputs.repository }}
+      IMAGE_DIGEST: ${{ needs.release-image.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Login to OCI registry for Helm
+        run: |
+          set -euo pipefail
+          echo "${REGISTRY_ACCESS_TOKEN}" | helm registry login "${REGISTRY_HOST}" \
+            -u "${{ github.actor }}" --password-stdin
+
+      - name: Stamp chart version and pin image digest
+        run: |
+          set -euo pipefail
+          # The git tag is the single source of truth for the chart version.
+          # No querying the registry, no guessing: a given tag always produces
+          # exactly one chart version, reproducibly, from a clean checkout.
+          yq -i ".version = \"${VERSION}\" | .appVersion = \"${VERSION}\"" .helm/Chart.yaml
+          yq -i ".image.repository = \"${IMAGE_REPOSITORY}\" | .image.tag = \"${VERSION}@${IMAGE_DIGEST}\"" .helm/values.yaml
+
+          echo "--- Chart.yaml ---"; cat .helm/Chart.yaml
+          echo "--- values.yaml image ---"; yq '.image' .helm/values.yaml
+
+      - name: Lint and render the chart
+        run: |
+          set -euo pipefail
+          helm lint .helm
+          # Catch templates that lint clean but render invalid YAML.
+          helm template release-check .helm > /dev/null
+          helm template release-check .helm --set ingress.enabled=true > /dev/null
+
+      - name: Package and push chart
+        id: push
+        run: |
+          set -euo pipefail
+          chart_name=$(yq -r '.name' .helm/Chart.yaml)
+          chart_repo="oci://${REGISTRY_HOST}/${{ github.repository_owner }}/$(basename ${{ github.repository }})/helm"
+          chart_repo=$(echo "$chart_repo" | tr '[:upper:]' '[:lower:]')
+
+          helm package .helm --destination dist
+          helm push "dist/${chart_name}-${VERSION}.tgz" "$chart_repo" 2>&1 | tee push.log
+
+          digest=$(grep -oE 'sha256:[0-9a-f]{64}' push.log | head -n1)
+          if [ -z "$digest" ]; then
+            echo "::error::could not determine pushed chart digest."
+            exit 1
+          fi
+          {
+            echo "chart_name=$chart_name"
+            echo "chart_repo=$chart_repo"
+            echo "digest=$digest"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign and verify the chart
+        run: |
+          set -euo pipefail
+          # The chart carries the deployment topology and the image digest.
+          # Signing the image but not the chart leaves the more interesting
+          # half of the supply chain unprotected.
+          ref="${{ steps.push.outputs.chart_repo }}/${{ steps.push.outputs.chart_name }}@${{ steps.push.outputs.digest }}"
+          ref="${ref#oci://}"
+          cosign sign --yes "$ref"
+          cosign verify \
+            --certificate-identity "${GITHUB_SERVER_URL}/${{ github.repository }}/.github/workflows/release.yaml@${{ github.ref }}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$ref" > /dev/null
+          echo "Chart signature verified."
+
+      - name: Upload packaged chart
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: dist/*.tgz
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs: [release-image, release-chart]
+    permissions:
+      contents: write     # required to create the GitHub Release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            artifacts/*.tgz
+            artifacts/sbom.json
+            artifacts/provenance.json
+          body: |
+            ## Container image
+
+            ```
+            ${{ needs.release-image.outputs.repository }}:${{ needs.release-image.outputs.version }}
+            ```
+
+            Digest: `${{ needs.release-image.outputs.digest }}`
+
+            ### Verify the signature
+
+            ```bash
+            cosign verify \
+              --certificate-identity "${{ github.server_url }}/${{ github.repository }}/.github/workflows/release.yaml@refs/tags/${{ inputs.tag || github.ref_name }}" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+              ${{ needs.release-image.outputs.repository }}@${{ needs.release-image.outputs.digest }}
+            ```
+
+            ### Verify build provenance
+
+            ```bash
+            gh attestation verify \
+              oci://${{ needs.release-image.outputs.repository }}:${{ needs.release-image.outputs.version }} \
+              --repo ${{ github.repository }}
+            ```
+
+            ### Install the chart
+
+            ```bash
+            helm install quake \
+              oci://${{ needs.release-image.outputs.repository }}/helm/${{ needs.release-chart.outputs.chart_name }} \
+              --version ${{ needs.release-image.outputs.version }}
+            ```
+
+            ---
