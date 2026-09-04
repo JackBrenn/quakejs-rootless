@@ -121,12 +121,15 @@ jobs:
           build-args: |
             SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4
+
       - name: Sign the published image
-        uses: sigstore/cosign-action@v3
-        with:
-          images: |
-            ${{ steps.meta.outputs.tags }}
-          create-referrer: true
+        env:
+          DIGEST: ${{ steps.build-docker-image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${REGISTRY_HOST}/${REPOSITORY_LOWER}@${DIGEST}"
 
   package-helm:
     runs-on: ubuntu-latest

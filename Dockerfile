@@ -43,10 +43,11 @@ RUN npm ci --omit=dev
 RUN sed -i \
         -e "s|'http://' + root|'//' + root|g" \
         -e "s|'http://' + fs_cdn|'//' + fs_cdn|g" \
-        -e "s|'ws://' + addr|((location.protocol==='https:')?'wss://':'ws://') + addr|g" \
+        -e "s|'ws://' + addr|((typeof location!=='undefined'\&\&location.protocol==='https:')?'wss://':'ws://') + addr|g" \
         html/ioquake3.js \
     && ! grep -q "'http://'" html/ioquake3.js \
-    && ! grep -q "'ws://' + addr" html/ioquake3.js
+    && ! grep -q "'ws://' + addr" html/ioquake3.js \
+    && grep -q "typeof location!=='undefined'" html/ioquake3.js
 
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)

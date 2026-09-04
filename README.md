@@ -53,12 +53,13 @@ The `ws` change is the only one that reaches into GPL-covered engine code; see
 ## Quick Start
 
 The image is published to **GitHub Container Registry** by this repository's
-CI pipeline (`ghcr.io/jackbrenn/quakejs-rootless`). Pulling public GHCR
-images requires authentication: log in with any GitHub personal access token
-(`docker login ghcr.io` / `podman login ghcr.io`). A mirror is also published
-manually to Docker Hub as
+CI pipeline (`ghcr.io/jackbrenn/quakejs-rootless`) and can be pulled
+anonymously — no login required. A mirror is also published manually to
+Docker Hub as
 [`awakenedpower/quakejs-rootless`](https://hub.docker.com/r/awakenedpower/quakejs-rootless);
-that mirror is built and published by the maintainer outside this repository.
+that mirror is built and published by the maintainer outside this repository,
+so prefer the GHCR image if you want the artefact this repository's pipeline
+produced.
 
 ### Using Podman (Recommended)
 

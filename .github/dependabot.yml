@@ -1,4 +1,4 @@
-version: 1
+version: 2
 updates:
   # Dockerfiles: keep the dhi.io base images (digests and versions) current,
   # and catch new versions of anything installed via apt in the builder.
