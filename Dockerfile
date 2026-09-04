@@ -10,7 +10,6 @@ RUN apt-get update && \
     apt-get upgrade -y -o Dpkg::Options::="--force-confnew" && \
     apt-get install -y --no-install-recommends \
         curl \
-        netcat-openbsd \
         ca-certificates && \
     echo 'adm:x:4:' >> /etc/group && \
     echo 'www-data:x:33:' >> /etc/group && \
@@ -58,7 +57,6 @@ ENV TZ=UTC
 
 # Copy required binaries
 COPY --from=builder /usr/bin/node /usr/bin/node
-COPY --from=builder /usr/bin/sed /usr/bin/sed
 
 # Copy core runtime libraries (Node.js, Nginx, Bash dependencies)
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
@@ -85,19 +83,6 @@ RUN cp /quakejs/html/* /home/nonroot/www/ && \
 
 COPY --chown=65532:65532 ./include/assets/ /home/nonroot/www/assets
 COPY --chown=65532:65532 nginx.conf /etc/nginx/nginx.conf
-
-RUN mkdir -p \
-        /tmp/client_temp \
-        /tmp/proxy_temp_path \
-        /tmp/fastcgi_temp \
-        /tmp/uwsgi_temp \
-        /tmp/scgi_temp && \
-    chown -R 65532:65532 \
-        /tmp/client_temp \
-        /tmp/proxy_temp_path \
-        /tmp/fastcgi_temp \
-        /tmp/uwsgi_temp \
-        /tmp/scgi_temp
 
 COPY --chown=65532:65532 --chmod=755 entrypoint.sh /entrypoint.sh
 COPY --chown=65532:65532 COPYING LICENSE.MIT README.md /usr/share/doc/quakejs-rootless/

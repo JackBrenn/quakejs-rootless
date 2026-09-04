@@ -1,2 +1,8 @@
 node_modules/
 .git/
+.github/
+.helm/
+docker-compose.yml
+nginx-reverse-proxy.conf.example
+SECURITY.md
+.gitignore
