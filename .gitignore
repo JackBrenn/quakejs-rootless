@@ -1,2 +1,4 @@
-quakejsdocsnode_modules/
+quakejs
+docs
+node_modules/
 npm-debug.log*
