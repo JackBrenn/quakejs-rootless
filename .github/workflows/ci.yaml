@@ -1,12 +1,13 @@
 name: CI
 
-# Continuous builds for branches and pull requests.
-# Releases are handled separately by release.yaml, driven by v* tags.
+# Build validation for pull requests and feature branches only.
+# master is owned by release.yaml, which publishes a real release on every
+# push there. Nothing in this file ever touches a release tag or channel.
 
 on:
   push:
-    branches:
-      - '**'
+    branches-ignore:
+      - master        # master is release.yaml's job
     # NOTE: GitHub Actions does not support YAML anchors/aliases, so this list
     # has to be duplicated below rather than shared with '&'/'*'.
     paths:
@@ -38,9 +39,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # Superseded dev builds are safe to cancel, but a run that is going to push
-  # and sign artifacts on the default branch should be allowed to finish.
-  cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
+  # Superseded dev builds are always safe to cancel.
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -97,10 +97,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=raw,value={{date 'YYYY.MM.DD.HHmm' tz='UTC'}}
-            # 'latest' is deliberately NOT set here: release.yaml owns it, so a
-            # post-release commit to master cannot silently drag it back onto an
-            # unreleased build.
-            type=raw,value=dev,enable=${{ github.ref_name != github.event.repository.default_branch }}
+            # No 'latest' and no semver here -- those belong to release.yaml.
+            type=raw,value=dev
             type=sha
           labels: |
             org.opencontainers.image.licenses=GPL-2.0-or-later
@@ -149,7 +147,9 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}:buildcache
           # Only the default branch writes the shared cache, so a branch build
           # cannot poison what everyone else pulls from.
-          cache-to: ${{ github.ref_name == github.event.repository.default_branch && format('type=registry,ref={0}/{1}:buildcache,mode=max', env.REGISTRY_HOST, env.REPOSITORY_LOWER) || '' }}
+          # Read the shared cache, never write it: only release.yaml populates
+          # buildcache, so a feature branch cannot poison it.
+          cache-to: ''
           provenance: ${{ env.PUSH == 'true' && 'mode=max' || 'false' }}
           sbom: ${{ env.PUSH }}
           build-args: |
