@@ -122,7 +122,9 @@ jobs:
             SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4
+        # Pinned: the repo publishes no floating 'v4' tag (tags are v4.0.0,
+        # v4.1.0, v4.1.1, v4.1.2 ...).
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Sign the published image
         env:
