@@ -1,0 +1,29 @@
+version: 1
+updates:
+  # Dockerfiles: keep the dhi.io base images (digests and versions) current,
+  # and catch new versions of anything installed via apt in the builder.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # npm dependencies (currently: ws only)
+  - package-ecosystem: "npm"
+    directory: "/quakejs"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "npm"
+
+  # GitHub Actions used by the CI workflow
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"

@@ -1,8 +1,7 @@
-version: '3.8'
 services:
   quakejs:
     container_name: quakejs
-    image: awakenedpower/quakejs-rootless:latest
+    image: ghcr.io/jackbrenn/quakejs-rootless:latest
     ports:
       - '8080:8080'
     restart: unless-stopped

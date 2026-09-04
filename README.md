@@ -4,7 +4,7 @@
 
 ## Play multiplayer Quake III Arena in your browser with Podman / Docker
 
-[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-awakenedpower%2Fquakejs--rootless-blue?style=for-the-badge&logo=docker)](https://hub.docker.com/r/awakenedpower/quakejs-rootless)
+[![GitHub Container Registry](https://img.shields.io/badge/GHCR-jackbrenn%2Fquakejs--rootless-blue?style=for-the-badge&logo=github)](https://github.com/JackBrenn/quakejs-rootless/pkgs/container/quakejs-rootless)
 
 </div>
 
@@ -52,13 +52,21 @@ The `ws` change is the only one that reaches into GPL-covered engine code; see
 
 ## Quick Start
 
+The image is published to **GitHub Container Registry** by this repository's
+CI pipeline (`ghcr.io/jackbrenn/quakejs-rootless`). Pulling public GHCR
+images requires authentication: log in with any GitHub personal access token
+(`docker login ghcr.io` / `podman login ghcr.io`). A mirror is also published
+manually to Docker Hub as
+[`awakenedpower/quakejs-rootless`](https://hub.docker.com/r/awakenedpower/quakejs-rootless);
+that mirror is built and published by the maintainer outside this repository.
+
 ### Using Podman (Recommended)
 
 ```bash
 podman run -d \
   --name quakejs \
   -p 8080:8080 \
-  docker.io/awakenedpower/quakejs-rootless:latest
+  ghcr.io/jackbrenn/quakejs-rootless:latest
 ```
 
 ### Using Docker Run
@@ -67,7 +75,7 @@ podman run -d \
 docker run -d \
   --name quakejs \
   -p 8080:8080 \
-  docker.io/awakenedpower/quakejs-rootless:latest
+  ghcr.io/jackbrenn/quakejs-rootless:latest
 ```
 
 Then open your browser and navigate to `http://localhost:8080` to start playing!
@@ -80,7 +88,7 @@ Create a `docker-compose.yml` file:
 services:
   quakejs:
     container_name: quakejs
-    image: awakenedpower/quakejs-rootless:latest
+    image: ghcr.io/jackbrenn/quakejs-rootless:latest
     ports:
       - '8080:8080'
     restart: unless-stopped
@@ -152,7 +160,7 @@ Important values:
 
 ```yaml
 image:
-  repository: docker.io/awakenedpower/quakejs-rootless
+  repository: ghcr.io/jackbrenn/quakejs-rootless
   tag: latest
 
 ingress:
