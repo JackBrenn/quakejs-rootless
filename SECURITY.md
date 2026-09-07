@@ -10,15 +10,11 @@ but are not patched.
 
 Please report security vulnerabilities privately:
 
-- **Email:** brennanjk@protonmail.com
-
-Please do **not** open a public issue for a security vulnerability.
+- **Email:** brennanjk <at> protonmail <dot> com
 
 ## Response
 
-I will acknowledge receipt within 3 business days and aim to ship a fix as
-soon as practicable. If a fix is released, the affected and fixed image
-tags will be noted in the advisory correspondence.
+I will acknowledge receipt when time permits.
 
 ## Scope Notes
 
