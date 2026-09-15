@@ -1,7 +1,7 @@
 #Builder
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:6494510e69a2d2537a95f45a5645cdd8fd805cb77c4c2e54f5ded3fdaec09ea9 AS builder
+FROM dhi.io/debian-base@sha256:d334892a993c15157f04ac6f187bd637b2ecd890fe0ea36b735e6d47b436530d AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
@@ -51,7 +51,7 @@ RUN sed -i \
 
 #Hardened image
 # Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:842a2a60f68ce1bf48bb3aa7852194ea3364ef52cc5627c0a7b4629ccd3c87d9
+FROM dhi.io/debian-base@sha256:bb14ed60c885fce1731aa34c0bff91d5728a2d904ae943509a0333e6a34f2731
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
