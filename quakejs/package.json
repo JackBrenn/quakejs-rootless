@@ -9,6 +9,6 @@
   "license": "(MIT AND GPL-2.0-or-later)",
   "readmeFilename": "README.md",
   "dependencies": {
-    "ws": "~8.21.3"
+    "ws": "~8.22.0"
   }
 }
