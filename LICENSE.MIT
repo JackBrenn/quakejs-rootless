@@ -13,13 +13,12 @@ Covered by this licence:
     docker-compose.yml
     entrypoint.sh
     nginx.conf
-    nginx-reverse-proxy.conf.example
     server.cfg
     .helm/**
     .github/workflows/**
-    modifications made in this repository to the QuakeJS Node.js server and
-    tooling under quakejs/bin/, quakejs/base/ and
-    quakejs/package.json, which upstream distributes under the MIT licence
+    modifications made in this repository to the QuakeJS web client files
+    under quakejs/html/ (except ioquake3.js) and quakejs/package.json, which
+    upstream distributes under the MIT licence
 
 NOT covered by this licence:
 

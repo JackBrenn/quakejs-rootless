@@ -4,33 +4,6 @@
 		<title>QuakeJS Local</title>
 		<link rel="stylesheet" href="game.css"></link>
 		<script type="text/javascript" src="ioquake3.js"></script>
-		<link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
-		<link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
-		<link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
-		<link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
-		<link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
-		<link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
-		<link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
-		<link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
-		<link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
-		<link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-		<link rel="manifest" href="/manifest.json">
-		<meta name="msapplication-TileColor" content="#ffffff">
-		<meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-		<meta name="theme-color" content="#ffffff">
-		<!-- <script type="text/javascript">
-			var _gaq = _gaq || [];
-			_gaq.push(['_setAccount', 'UA-37328221-1']);
-			_gaq.push(['_trackPageview']);
-			(function() {
-				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-			})();
-		</script> -->
 		<script type="text/javascript">
 			function getQueryCommands() {
 				var search = /([^&=]+)/g;
@@ -68,30 +41,17 @@
 				ioq3.elementPointerLock = true;
 				ioq3.exitHandler = function (err) {
 					if (err) {
-						var form = document.createElement('form');
-						form.setAttribute('method', 'POST');
-						form.setAttribute('action', '/');
-
-						var hiddenField = document.createElement('input');
-						hiddenField.setAttribute('type', 'hidden');
-						hiddenField.setAttribute('name', 'error');
-						hiddenField.setAttribute('value', err);
-						form.appendChild(hiddenField);
-
-						document.body.appendChild(form);
-						form.submit();
-						return;
+						alert(err);
 					}
-
 					window.location.href = '/';
-				}
+				};
 
 				window.addEventListener('resize', resizeViewport);
 
-								// merge default args with query string args
+				// merge default args with query string args
 				var url = new URL(window.location.href);
-                                var port = url.port || (url.protocol === "https:" ? "443" : "80");
-                                var connectAddr = url.hostname + ":" + port;
+				var port = url.port || (url.protocol === "https:" ? "443" : "80");
+				var connectAddr = url.hostname + ":" + port;
 				var args = ['+set', 'fs_cdn', connectAddr, '+connect', connectAddr];
 				args.push.apply(args, getQueryCommands());
 				ioq3.callMain(args);

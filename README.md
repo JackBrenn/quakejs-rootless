@@ -10,98 +10,42 @@
 
 ## About
 
-This project is a fully local QuakeJS server fork based on @treyyoder's original repository. The primary goal of this fork is to deliver a modern, lightweight, and secure alternative. 
-To achieve this, the original game code was refactored to support modern npm packages, resulting in a meaningful reduction of critical and high-severity vulnerabilities.
+A fully local QuakeJS server, forked from @treyyoder's quakejs-docker and
+packaged as a small, rootless container.
 
-| Component | This Fork |
+| Component | |
 |-----------|-----------|
 | Base OS | **Debian 13 Docker Hardened Image** |
 | Node.js | **22.x LTS** |
 | Web Server | **Nginx Light** |
 | Networking | **Single Port Multiplexed via Nginx** |
 | Container User | **non-root** |
-| npm packages | **Modernized, with compatibility fixes** |
 
-<details>
-<summary><b>What "modernized" means</b></summary>
+The server's only npm dependency is `ws` 8. Moving to it from `ws` 0.4 needed
+one change to GPL-covered engine code; see [Licensing](#licensing).
 
-The QuakeJS server and tooling were written against Node 0.10-era packages, five
-of which are now unmaintained. They have been removed in favour of Node natives
-or maintained equivalents, and the two upgrades that changed public APIs were
-followed through in the calling code:
-
-| Was | Now | Notes |
-|---|---|---|
-| `optimist` | `yargs` 18 | argument parsing across all `bin/` entry points |
-| `wrench` | native `fs` | recursive `readdirSync`, `mkdirSync`, `rmSync` |
-| `execSync` (package) | native `spawnSync` | shimmed to keep the old `{code, stdout}` return shape |
-| `temp` | native `fs.mkdtempSync` | |
-| `express` 3.3 | `express` 5.2 | `res.sendfile` → `res.sendFile`; `express.compress` replaced by the standalone `compression` package |
-| `ws` 0.4 | `ws` 8.21 | `upgradeReq` replaced by the handler's `req` argument; `flags.binary` → `isBinary` |
-
-Also bumped: async, buffer-crc32, ejs, send, underscore, winston.
-
-The `ws` change is the only one that reaches into GPL-covered engine code; see
-[Licensing](#licensing).
-
-</details>
-
-### Out of Scope
-- Recompile original game code from ioquake3 (still old game code)
-- Introduce new functionality
+Out of scope: recompiling the engine from ioquake3, and adding new features.
 
 ## Quick Start
 
-The image is published to **GitHub Container Registry** by this repository's
-CI pipeline (`ghcr.io/jackbrenn/quakejs-rootless`) and can be pulled
-anonymously — no login required. A mirror is also published manually to
-Docker Hub as
-[`awakenedpower/quakejs-rootless`](https://hub.docker.com/r/awakenedpower/quakejs-rootless);
-that mirror is built and published by the maintainer outside this repository,
-so prefer the GHCR image if you want the artefact this repository's pipeline
-produced.
-
-### Using Podman (Recommended)
+Images are published to **GitHub Container Registry** by this repository's
+release workflow and can be pulled anonymously. A Docker Hub mirror,
+[`awakenedpower/quakejs-rootless`](https://hub.docker.com/r/awakenedpower/quakejs-rootless),
+is published by hand outside this repository; prefer GHCR.
 
 ```bash
-podman run -d \
-  --name quakejs \
-  -p 8080:8080 \
-  ghcr.io/jackbrenn/quakejs-rootless:latest
+podman run -d --name quakejs -p 8080:8080 ghcr.io/jackbrenn/quakejs-rootless:latest
 ```
 
-### Using Docker Run
+`docker run` takes the same arguments. Then open `http://localhost:8080` to play.
+
+With Compose, use this repository's [`docker-compose.yml`](docker-compose.yml):
 
 ```bash
-docker run -d \
-  --name quakejs \
-  -p 8080:8080 \
-  ghcr.io/jackbrenn/quakejs-rootless:latest
+docker compose up -d
 ```
 
-Then open your browser and navigate to `http://localhost:8080` to start playing!
-
-### Using Docker Compose
-
-Create a `docker-compose.yml` file:
-
-```yaml
-services:
-  quakejs:
-    container_name: quakejs
-    image: ghcr.io/jackbrenn/quakejs-rootless:latest
-    ports:
-      - '8080:8080'
-    restart: unless-stopped
-```
-
-Then run:
-
-```bash
-docker-compose up -d
-```
-
-### Using Kubernetes with Helm
+### Kubernetes with Helm
 
 This repository includes a Helm chart in `.helm/`. The CI workflow builds and pushes a `linux/amd64` image, then packages the chart as an OCI artifact with the image pinned as `tag@sha256:<digest>`.
 
@@ -179,60 +123,26 @@ For ArgoCD, consume the published OCI Helm chart and override values there rathe
 
 ## Building from Source
 
-### Building with Podman (Recommended)
-You must login to dhi.io (Free with a Dockerhub user) to download the hardened images.
+You need to log in to dhi.io (free with a Docker Hub account) to pull the
+hardened base images. The commands are the same with `docker`.
 
-1. **Clone the repository:**
 ```bash
 git clone https://github.com/JackBrenn/quakejs-rootless.git
 cd quakejs-rootless
-```
-
-2. **Build the image:**
-
-```bash
 podman login dhi.io
-podman build -t quakejs-rootless:latest .
+podman build -t quakejs-rootless .
 ```
 
-3. **Run the container:**
-```bash
-podman run -d \
-  --name quakejs \
-  -p 8080:8080 \
-  quakejs-rootless:latest
-```
-
-### Building with Docker
-
-1. **Clone the repository:**
-```bash
-git clone https://github.com/JackBrenn/quakejs-rootless.git
-cd quakejs-rootless
-```
-2. **Build the image:**
-```bash
-docker login dhi.io
-docker build -t quakejs-rootless:latest .
-```
-
-3. **Run the container:**
-```bash
-docker run -d \
-  --name quakejs \
-  -p 8080:8080 \
-  quakejs-rootless:latest
-```
+`test/smoke.sh` builds the image, runs it and checks that it serves the game.
 
 ## Configuration
 
-### Server Configuration
-
-The server configuration can be customized by modifying `server.cfg`.
-
-### Ports
-
-- **8080** - Multiplexed Web interface and Game server port. Web requests are handled by Nginx directly, while WebSocket game traffic is seamlessly forwarded internally. This makes proxying behind SSL natively supported via a single port.
+- **`server.cfg`**: the server settings. Edit it and rebuild, or mount your own
+  over `/quakejs/base/<FS_GAME>/server.cfg`.
+- **`FS_GAME`**: `baseq3` (default) or `cpma`.
+- **Port 8080**: serves the web client and forwards WebSocket game traffic to
+  the game server inside the container, so one port is all a TLS reverse proxy
+  needs.
 
 ## Credits & Acknowledgments
 This wouldn't be possible without these projects or contributors:
@@ -256,7 +166,7 @@ under either licence at your option.
 | Component | Origin | Licence |
 |---|---|---|
 | `quakejs/build/ioq3ded.js`, `quakejs/html/ioquake3.js` | id Software → ioquake3 → QuakeJS (Emscripten build) | GPL-2.0-or-later |
-| `quakejs/bin/`, `quakejs/html/` (except `ioquake3.js`), `quakejs/base/`, `quakejs/package.json` | QuakeJS (Anthony Pesch), with changes from this repository | MIT |
+| `quakejs/html/` (except `ioquake3.js`), `quakejs/package.json` | QuakeJS (Anthony Pesch), with changes from this repository | MIT |
 | `Dockerfile`, `entrypoint.sh`, `nginx.conf`, `server.cfg`, `.helm/`, `.github/workflows/` | This repository | MIT (`LICENSE.MIT`) |
 | `include/assets/` | id Software and third-party map/mod authors | Proprietary — see [Game content](#game-content) |
 
