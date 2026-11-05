@@ -1,12 +1,11 @@
+{{- if .Values.quake.serverConfig }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "quake.fullname" . }}-config
+  name: {{ include "quake.fullname" . }}
   labels:
     {{- include "quake.labels" . | nindent 4 }}
 data:
-  FS_CDN: {{ .Values.quake.fsCdn | quote }}
-  FS_GAME: {{ .Values.quake.fsGame | quote }}
-  SERVER_CONFIG: {{ .Values.quake.serverConfigFile | quote }}
   server.cfg: |
-{{ .Values.quake.serverConfig | indent 4 }}
+    {{- .Values.quake.serverConfig | nindent 4 }}
+{{- end }}

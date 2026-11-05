@@ -1,8 +1,6 @@
 {{- if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-{{- range .paths }}
-http{{ if $host.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
-{{- end }}
+{{- range .Values.ingress.hosts }}
+http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}/
 {{- end }}
 {{- else }}
 Use port-forwarding:

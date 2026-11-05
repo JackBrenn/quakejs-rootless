@@ -5,14 +5,13 @@ metadata:
   labels:
     {{- include "quake.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "quake.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ .Values.quake.serverConfig | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -22,6 +21,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -32,9 +32,9 @@ spec:
         - name: quake
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "quake.fullname" . }}-config
+          env:
+            - name: FS_GAME
+              value: {{ .Values.quake.fsGame | quote }}
           ports:
             - name: http-game
               containerPort: 8080
@@ -51,18 +51,29 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          # The root filesystem is read-only: nginx writes to /tmp and the
+          # game server downloads its game data into /quakejs/base.
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: game-data
+              mountPath: /quakejs/base
+            {{- if .Values.quake.serverConfig }}
             - name: server-config
-              mountPath: /quakejs/base/baseq3/server.cfg
+              mountPath: /etc/quakejs/server.cfg
               subPath: server.cfg
               readOnly: true
+            {{- end }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: game-data
+          emptyDir: {}
+        {{- if .Values.quake.serverConfig }}
         - name: server-config
           configMap:
-            name: {{ include "quake.fullname" . }}-config
-            items:
-              - key: server.cfg
-                path: server.cfg
+            name: {{ include "quake.fullname" . }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

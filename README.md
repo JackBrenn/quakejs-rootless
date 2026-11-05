@@ -47,23 +47,32 @@ docker compose up -d
 
 ### Kubernetes with Helm
 
-This repository includes a Helm chart in `.helm/`. Each release publishes it as an OCI artifact with the image pinned as `tag@sha256:<digest>`.
-
-Local install:
-
-```bash
-helm install quake .helm \
-  --namespace quakejs \
-  --create-namespace
-```
-
-Install from the published OCI Helm chart:
+Each release publishes the chart in `.helm/` as an OCI artifact, with the
+image pinned as `version@sha256:<digest>`. To install from a checkout instead,
+use `.helm` as the chart.
 
 ```bash
 helm install quake oci://ghcr.io/jackbrenn/quakejs-rootless/helm/quake \
-  --namespace quakejs \
-  --create-namespace
+  --namespace quakejs --create-namespace
 ```
+
+The main values:
+
+```yaml
+ingress:
+  enabled: true
+  className: ""
+  hosts:
+    - host: quake.example.com
+  tls: []            # e.g. [{secretName: quake-tls, hosts: [quake.example.com]}]
+
+quake:
+  fsGame: baseq3     # or cpma
+  serverConfig: ""   # set to replace the image's server.cfg
+```
+
+The pod runs as a non-root user with a read-only root filesystem; the game
+server downloads its game data into an `emptyDir` when it starts.
 
 <details>
 <summary>ArgoCD Application example</summary>
@@ -79,15 +88,13 @@ spec:
   source:
     repoURL: oci://ghcr.io/jackbrenn/quakejs-rootless/helm
     chart: quake
-    targetRevision: 0.1.0
+    targetRevision: 2.0.0
     helm:
       values: |
         ingress:
           enabled: true
-          className: ""
           hosts:
             - host: quake.example.com
-              tls: false
   destination:
     server: https://kubernetes.default.svc
     namespace: quakejs
@@ -100,26 +107,6 @@ spec:
 ```
 
 </details>
-
-Important values:
-
-```yaml
-image:
-  repository: ghcr.io/jackbrenn/quakejs-rootless
-  tag: latest
-
-ingress:
-  enabled: false
-  className: ""
-  hosts:
-    - host: quake.example.com
-      tls: false
-
-quake:
-  fsGame: baseq3
-```
-
-For ArgoCD, consume the published OCI Helm chart and override values there rather than editing rendered manifests.
 
 ## Building from Source
 
@@ -138,7 +125,7 @@ podman build -t quakejs-rootless .
 ## Configuration
 
 - **`server.cfg`**: the server settings. Edit it and rebuild, or mount your own
-  over `/quakejs/base/<FS_GAME>/server.cfg`.
+  over `/etc/quakejs/server.cfg`.
 - **`FS_GAME`**: `baseq3` (default) or `cpma`.
 - **Port 8080**: serves the web client and forwards WebSocket game traffic to
   the game server inside the container, so one port is all a TLS reverse proxy

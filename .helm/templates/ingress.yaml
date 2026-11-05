@@ -13,47 +13,23 @@ spec:
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
   {{- end }}
-  {{- $tlsState := dict "printed" false }}
-  {{- range .Values.ingress.hosts }}
-  {{- $hostName := default .name .host }}
-  {{- $tlsEnabled := false }}
-  {{- if eq (kindOf .tls) "bool" }}
-  {{- $tlsEnabled = .tls }}
-  {{- else if eq (kindOf .tls) "map" }}
-  {{- $tlsEnabled = default true (index .tls "enabled") }}
-  {{- else if .tls }}
-  {{- $tlsEnabled = true }}
-  {{- end }}
-  {{- if and $tlsEnabled $hostName }}
-  {{- if not ($tlsState.printed) }}
+  {{- with .Values.ingress.tls }}
   tls:
-  {{- $_ := set $tlsState "printed" true }}
-  {{- end }}
-    {{- $explicitSecret := .secretName }}
-    {{- if eq (kindOf .tls) "map" }}
-    {{- $explicitSecret = default $explicitSecret (index .tls "secretName") }}
-    {{- end }}
-    {{- $secretName := default (printf "%s-tls" (replace "." "-" (lower $hostName))) $explicitSecret }}
-    - secretName: {{ $secretName }}
-      hosts:
-        - {{ $hostName | quote }}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
-    {{- $hostName := default .name .host }}
-    - host: {{ $hostName | quote }}
+    - host: {{ .host | quote }}
       http:
         paths:
-          {{- $paths := .paths | default (list (dict "path" "/" "pathType" "ImplementationSpecific")) }}
-          {{- range $path := $paths }}
-          - path: {{ $path.path | default "/" }}
-            pathType: {{ $path.pathType | default "ImplementationSpecific" }}
+          {{- range .paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
               service:
                 name: {{ include "quake.fullname" $ }}
                 port:
-                  number: {{ $.Values.service.port }}
+                  name: http-game
           {{- end }}
     {{- end }}
 {{- end }}
