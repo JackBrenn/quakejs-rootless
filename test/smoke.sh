@@ -34,4 +34,10 @@ curl -fsS "$url/assets/manifest.json" | grep -q pak100.pk3 || fail "asset manife
   ws.on("message", (d) => d.includes("statusResponse") && process.exit(0));
 ' || fail "game server did not answer over WebSocket"
 
+"$engine" exec "$name" touch /srv/www/index.html 2>/dev/null && fail "the web root is writable"
+
+start=$SECONDS
+"$engine" stop -t 10 "$name" >/dev/null 2>&1
+(( SECONDS - start < 5 )) || fail "container took $((SECONDS - start))s to stop"
+
 echo PASS

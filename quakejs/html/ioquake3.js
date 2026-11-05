@@ -10,14 +10,10 @@
 // Modified in quakejs-rootless -- https://github.com/JackBrenn/quakejs-rootless
 // 2026-05-30   ws 8.x compatibility: WebSocket message handler uses the isBinary
 //              argument instead of the flags.binary argument used by ws 1.x.
-// 2026-09-04   Scheme-aware URLs (applied at image build time by the
-//              Dockerfile, not in this source file): the hardcoded
-//              http:// URL prefixes on the asset and manifest fetches, and
-//              the ws:// connect-URL literal, are rewritten to use the
-//              page's own protocol, so clients served over TLS fetch
-//              assets and connect over https:/wss: without relying on a
-//              'Content-Security-Policy: upgrade-insecure-requests'
-//              header surviving the reverse-proxy chain.
+// 2026-11-05   Scheme-aware URLs: the asset and manifest fetches and the
+//              WebSocket connect URL use the page's own protocol instead
+//              of hardcoded http:// and ws://, so clients served over TLS
+//              fetch assets over https: and connect over wss:.
 // (inherited)  demo EULA prompt made non-interactive, from
 //              treyyoder/quakejs-docker. Applies to ioq3ded.js only.
 //
@@ -15249,7 +15245,7 @@ function copyTempDouble(ptr) {
   		},DownloadAsset:function (asset, onprogress, onload) {
   			var root = SYSC.GetCDN();
   			var name = asset.name.replace(/(.+\/|)(.+?)$/, '$1' + asset.checksum + '-$2');
-  			var url = 'http://' + root + '/assets/' + name;
+  			var url = '//' + root + '/assets/' + name;
   
   			SYS.DoXHR(url, {
   				dataType: 'arraybuffer',
@@ -15299,7 +15295,7 @@ function copyTempDouble(ptr) {
   			var fs_game = Pointer_stringify(_Cvar_VariableString(allocate(intArrayFromString('fs_game'), 'i8', ALLOC_STACK)));
   			var com_basegame = Pointer_stringify(_Cvar_VariableString(allocate(intArrayFromString('com_basegame'), 'i8', ALLOC_STACK)));
   			var mapname = Pointer_stringify(_Cvar_VariableString(allocate(intArrayFromString('mapname'), 'i8', ALLOC_STACK)));
-  			var url = 'http://' + fs_cdn + '/assets/manifest.json';
+  			var url = '//' + fs_cdn + '/assets/manifest.json';
   
   			function isInstaller(name) {
   				return SYSC.installers.some(function (installer) {
@@ -16619,7 +16615,7 @@ function copyTempDouble(ptr) {
           } else {
             // create the actual websocket object and connect
             try {
-              var url = 'ws://' + addr + ':' + port;
+              var url = ((typeof location!=='undefined'&&location.protocol==='https:')?'wss://':'ws://') + addr + ':' + port;
               // the node ws library API is slightly different than the browser's
               var opts = ENVIRONMENT_IS_NODE ? {headers: {'websocket-protocol': ['binary']}} : ['binary'];
               // If node we use the ws library.

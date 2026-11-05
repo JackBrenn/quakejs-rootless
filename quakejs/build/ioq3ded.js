@@ -10,6 +10,9 @@
 // Modified in quakejs-rootless -- https://github.com/JackBrenn/quakejs-rootless
 // 2026-05-30   ws 8.x compatibility: WebSocket message handler uses the isBinary
 //              argument instead of the flags.binary argument used by ws 1.x.
+// 2026-11-05   WebSocket server caps incoming messages at 64 KiB (maxPayload)
+//              instead of the ws default of 100 MiB. Quake packets are at
+//              most 16 KiB.
 // (inherited)  demo EULA prompt made non-interactive, from
 //              treyyoder/quakejs-docker. Applies to ioq3ded.js only.
 //
@@ -10193,7 +10196,8 @@ function copyTempDouble(ptr) {
           var host = sock.saddr;
           sock.server = new WebSocketServer({
             host: host,
-            port: sock.sport
+            port: sock.sport,
+            maxPayload: 65536
             // TODO support backlog
           });
   

@@ -16,7 +16,7 @@ packaged as a small, rootless container.
 | Component | |
 |-----------|-----------|
 | Base OS | **Debian 13 Docker Hardened Image** |
-| Node.js | **22.x LTS** |
+| Node.js | **24.x LTS** |
 | Web Server | **Nginx Light** |
 | Networking | **Single Port Multiplexed via Nginx** |
 | Container User | **non-root** |
@@ -211,18 +211,15 @@ compiled engine files in this tree differ from upstream QuakeJS as follows:
 2. The WebSocket message handler is updated from the `flags.binary` argument of
    `ws` 1.x to the `isBinary` argument used by `ws` 8.x. Made in this repository
    as part of the dependency modernisation.
+3. The WebSocket server caps incoming messages at 64 KiB instead of the `ws`
+   default of 100 MiB. Made in this repository.
 
 **`quakejs/html/ioquake3.js`**
 
 1. The same `ws` 8.x `isBinary` change as above. Made in this repository.
-2. At image build time the `Dockerfile` rewrites the three hardcoded
-   `http://`/`ws://` URL literals to be scheme-aware (using the page's own
-   protocol), so clients served over TLS fetch assets and connect over
-   `https:`/`wss:` without depending on the
-   `Content-Security-Policy: upgrade-insecure-requests` header surviving
-   the reverse-proxy chain. The `Dockerfile` asserts after the rewrite that
-   no hardcoded `http://`/`ws://` literals remain, and the CSP header is
-   kept as a belt-and-braces measure.
+2. The three hardcoded `http://`/`ws://` URL literals use the page's own
+   protocol instead, so clients served over TLS fetch assets and connect over
+   `https:`/`wss:`. Made in this repository.
 
 No other changes have been made to engine-derived files.
 

@@ -1,29 +1,29 @@
 #!/bin/bash
-set -e
+# Runs nginx (web client, game data and WebSocket proxy on port 8080) and the
+# game server side by side. If either exits, the container exits with it.
+set -euo pipefail
 
-# Create nginx temp directories at runtime
-mkdir -p /tmp/client_temp /tmp/proxy_temp_path /tmp/fastcgi_temp /tmp/uwsgi_temp /tmp/scgi_temp
+case "${FS_GAME:=baseq3}" in
+    baseq3|cpma) ;;
+    *) echo "FS_GAME must be baseq3 or cpma, not '$FS_GAME'" >&2; exit 1 ;;
+esac
 
-cd /home/nonroot/www
+trap 'kill -TERM $(jobs -p) 2>/dev/null || true' TERM INT
 
-# Start Nginx web server
-echo "Starting web server on port 8080..."
-nginx -c /etc/nginx/nginx.conf
+nginx -g 'daemon off;' &
 
-# Wait until nginx actually accepts connections (more reliable than a
-# fixed sleep plus a pidfile check)
-for i in $(seq 1 30); do
-    if node -e "require('net').connect(8080,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"; then
-        break
-    fi
-    if [ "$i" = 30 ]; then
-        echo "ERROR: web server failed to start"
-        exit 1
-    fi
-    sleep 0.5
+# The game server downloads its game data from nginx when it starts.
+until (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; do
+    kill -0 $! 2>/dev/null || exit 1
+    sleep 0.2
 done
 
 cd /quakejs
+node build/ioq3ded.js +set fs_game "$FS_GAME" +set dedicated 1 \
+    +set net_ip 127.0.0.1 +set fs_cdn 127.0.0.1:8080 +exec server.cfg &
 
-echo "Starting QuakeJS server..."
-exec node build/ioq3ded.js +set fs_game "${FS_GAME:-baseq3}" +set dedicated 1 +set fs_cdn "${FS_CDN:-localhost:8080}" +exec "${SERVER_CONFIG:-server.cfg}"
+status=0
+wait -n || status=$?
+kill -TERM $(jobs -p) 2>/dev/null || true
+wait || true
+exit "$status"

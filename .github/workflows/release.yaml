@@ -21,7 +21,6 @@ on:
       - 'server.cfg'
       - 'COPYING'
       - 'LICENSE.MIT'
-      - 'README.md'
       - 'include/**'
       - 'quakejs/**'
       - '.helm/**'
