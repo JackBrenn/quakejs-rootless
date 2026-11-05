@@ -2,7 +2,8 @@
 
 # Node.js and the game server's npm dependency. This stage also gathers the
 # files the server and nginx read, with write access for group and others
-# removed whatever the build host's umask.
+# removed whatever the build host's umask. (COPY --chmod is not used for
+# these: Docker's BuildKit applies its mode to directories it creates.)
 FROM dhi.io/node:24-debian13-dev@sha256:8c10f88dd9695f3280206c6cb225f4eddcb1211802cceb0fb1fdce1e011fd8cb AS node
 
 WORKDIR /quakejs
@@ -11,7 +12,10 @@ RUN npm ci --omit=dev
 COPY quakejs/build/ioq3ded.js build/
 COPY quakejs/html/ /srv/www/
 COPY include/assets/ /srv/www/assets/
-RUN mkdir -p base/baseq3 base/cpma && chmod -R go-w /quakejs /srv/www
+COPY server.cfg /etc/quakejs/
+COPY COPYING LICENSE.MIT /usr/share/doc/quakejs-rootless/
+RUN mkdir -p base/baseq3 base/cpma && \
+    chmod -R go-w /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless
 
 # nginx-light. The base image lacks the adm and www-data accounts and the
 # update-rc.d tool that the nginx packages' install scripts expect.
@@ -38,9 +42,9 @@ COPY --from=nginx /etc/nginx/mime.types /etc/nginx/mime.types
 # Everything is owned by root and read-only to the server user, except the
 # game data directory, which the game server fills at startup.
 COPY --chmod=644 nginx.conf /etc/nginx/nginx.conf
-COPY --chmod=644 server.cfg /etc/quakejs/server.cfg
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
-COPY --chmod=644 COPYING LICENSE.MIT /usr/share/doc/quakejs-rootless/
+COPY --from=node /etc/quakejs /etc/quakejs
+COPY --from=node /usr/share/doc/quakejs-rootless /usr/share/doc/quakejs-rootless
 COPY --from=node /srv/www /srv/www
 COPY --from=node /quakejs/build /quakejs/build
 COPY --from=node /quakejs/node_modules /quakejs/node_modules
