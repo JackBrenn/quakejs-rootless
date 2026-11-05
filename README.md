@@ -47,7 +47,7 @@ docker compose up -d
 
 ### Kubernetes with Helm
 
-This repository includes a Helm chart in `.helm/`. The CI workflow builds and pushes a `linux/amd64` image, then packages the chart as an OCI artifact with the image pinned as `tag@sha256:<digest>`.
+This repository includes a Helm chart in `.helm/`. Each release publishes it as an OCI artifact with the image pinned as `tag@sha256:<digest>`.
 
 Local install:
 

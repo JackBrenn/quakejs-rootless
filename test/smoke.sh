@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Smoke test: build the image, run it, and check that it serves the game.
-# Usage: test/smoke.sh [image]    (pass an existing image to skip the build)
+# Usage: [ENGINE=docker] test/smoke.sh [image]   (an image skips the build)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-engine=$(command -v podman || command -v docker)
+engine=${ENGINE:-$(command -v podman || command -v docker)}
 image=${1:-quakejs-rootless:smoke}
 port=${PORT:-18080}
 name=quakejs-smoke-$$

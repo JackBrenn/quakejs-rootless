@@ -1,283 +1,50 @@
 name: CI
 
-# Build validation for pull requests and feature branches only.
-# master is owned by release.yaml, which publishes a real release on every
-# push there. Nothing in this file ever touches a release tag or channel.
+# Builds the image and runs the smoke test on branches and pull requests.
+# Nothing is published here: release.yaml owns master, tags and signing.
 
 on:
   push:
     branches-ignore:
-      - master        # master is release.yaml's job
-    # NOTE: GitHub Actions does not support YAML anchors/aliases, so this list
-    # has to be duplicated below rather than shared with '&'/'*'.
-    paths:
-      - 'Dockerfile'
-      - 'entrypoint.sh'
-      - 'nginx.conf'
-      - 'server.cfg'
-      - 'COPYING'
-      - 'LICENSE.MIT'
-      - 'README.md'
-      - 'include/**'
-      - 'quakejs/**'
-      - '.helm/**'
-      - '.github/workflows/ci.yaml'
+      - master
   pull_request:
-    paths:
-      - 'Dockerfile'
-      - 'entrypoint.sh'
-      - 'nginx.conf'
-      - 'server.cfg'
-      - 'COPYING'
-      - 'LICENSE.MIT'
-      - 'README.md'
-      - 'include/**'
-      - 'quakejs/**'
-      - '.helm/**'
-      - '.github/workflows/ci.yaml'
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # Superseded dev builds are always safe to cancel.
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  build-image:
+  test:
     runs-on: ubuntu-latest
-    # Fork PRs cannot read the DHI secrets, so the dhi.io base image pull would
-    # fail. Skip them rather than showing contributors a confusing red X.
+    # Fork PRs cannot read the DHI secrets needed to pull the base images.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    outputs:
-      digest: ${{ steps.build.outputs.digest }}
-      repository: ${{ steps.export-vars.outputs.repository }}
-      tag: ${{ steps.export-vars.outputs.tag }}
-    env:
-      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
-      DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
-      DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
-      # Pull requests build but never publish.
-      PUSH: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Derive registry host
-        run: |
-          set -euo pipefail
-          host="${GITHUB_SERVER_URL#https://}"
-          host="${host#http://}"
-          [ "$host" = "github.com" ] && host="ghcr.io"
-          echo "REGISTRY_HOST=$host" >> "$GITHUB_ENV"
-          echo "REPOSITORY_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
-
-      - name: Require Docker Hardened Images credentials
-        run: |
-          set -euo pipefail
-          if [ -z "${DHI_USERNAME}" ] || [ -z "${DHI_TOKEN}" ]; then
-            echo "::error::DHI_USERNAME/DHI_TOKEN secrets are required to pull the dhi.io base images."
-            exit 1
-          fi
-
-      - name: Docker metadata
-        uses: docker/metadata-action@v6
-        id: meta
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
-          images: ${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=raw,value={{date 'YYYY.MM.DD.HHmm' tz='UTC'}}
-            # No 'latest' and no semver here -- those belong to release.yaml.
-            type=raw,value=dev
-            type=sha
-          labels: |
-            org.opencontainers.image.licenses=GPL-2.0-or-later
-            org.opencontainers.image.title=quakejs-rootless
-            org.opencontainers.image.description=Rootless QuakeJS server. Contains GPL-2.0-or-later engine code derived from ioquake3.
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to OCI registry
-        if: env.PUSH == 'true'
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY_HOST }}
-          username: ${{ github.actor }}
-          password: ${{ env.REGISTRY_ACCESS_TOKEN }}
-
-      - name: Login to Docker Hardened Images registry
-        uses: docker/login-action@v4
-        with:
-          registry: dhi.io
-          username: ${{ env.DHI_USERNAME }}
-          password: ${{ env.DHI_TOKEN }}
-
-      - name: Get git commit timestamp
-        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
-
-      - name: Export image outputs
-        id: export-vars
-        run: |
-          set -euo pipefail
-          # Matches docker/metadata-action's type=sha format (sha-<7 chars>).
-          tag="sha-$(git rev-parse --short=7 HEAD)"
-          echo "repository=${REGISTRY_HOST}/${REPOSITORY_LOWER}" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push image
-        uses: docker/build-push-action@v7
-        id: build
-        env:
-          DOCKER_BUILD_RECORD_UPLOAD: false
-        with:
-          context: .
-          platforms: linux/amd64
-          push: ${{ env.PUSH }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY_HOST }}/${{ env.REPOSITORY_LOWER }}:buildcache
-          # Only the default branch writes the shared cache, so a branch build
-          # cannot poison what everyone else pulls from.
-          # Read the shared cache, never write it: only release.yaml populates
-          # buildcache, so a feature branch cannot poison it.
-          cache-to: ''
-          provenance: ${{ env.PUSH == 'true' && 'mode=max' || 'false' }}
-          sbom: ${{ env.PUSH }}
-          build-args: |
-            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
-
-      - name: Install cosign
-        if: env.PUSH == 'true'
-        uses: sigstore/cosign-installer@v4.1.2
-
-      - name: Sign and verify the published image
-        if: env.PUSH == 'true'
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          set -euo pipefail
-          if [ -z "${DIGEST}" ]; then
-            echo "::error::build-push-action produced no digest; refusing to sign."
-            exit 1
-          fi
-          ref="${REGISTRY_HOST}/${REPOSITORY_LOWER}@${DIGEST}"
-          cosign sign --yes \
-            -a "repo=${{ github.repository }}" \
-            -a "ref=${{ github.ref_name }}" \
-            -a "sha=${{ github.sha }}" \
-            "$ref"
-          cosign verify \
-            --certificate-identity "${GITHUB_SERVER_URL}/${{ github.repository }}/.github/workflows/ci.yaml@${{ github.ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            "$ref" > /dev/null
-          echo "Signature verified."
-
-  package-helm:
-    runs-on: ubuntu-latest
-    needs: [build-image]
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    env:
-      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
-      PUSH: ${{ github.event_name != 'pull_request' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Derive registry host
-        run: |
-          set -euo pipefail
-          host="${GITHUB_SERVER_URL#https://}"
-          host="${host#http://}"
-          [ "$host" = "github.com" ] && host="ghcr.io"
-          echo "REGISTRY_HOST=$host" >> "$GITHUB_ENV"
-          echo "REPOSITORY_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          persist-credentials: false
 
       - name: Install Helm
-        uses: azure/setup-helm@v5
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
-      - name: Stamp a deterministic dev chart version
+      - name: Lint and render the Helm chart
         run: |
-          set -euo pipefail
-          # Dev charts get a SemVer pre-release version derived from the commit:
-          # reproducible from a clean checkout, always sorts below any real
-          # release, and never collides with an existing published version.
-          dev_version="0.0.0-dev.$(git rev-parse --short HEAD)"
-          yq -i ".version = \"${dev_version}\" | .appVersion = \"${dev_version}\"" .helm/Chart.yaml
-          echo "DEV_VERSION=${dev_version}" >> "$GITHUB_ENV"
-
-      - name: Pin image digest into values
-        if: env.PUSH == 'true'
-        run: |
-          set -euo pipefail
-          repo="${{ needs.build-image.outputs.repository }}"
-          tag="${{ needs.build-image.outputs.tag }}"
-          digest="${{ needs.build-image.outputs.digest }}"
-          if [ -z "$repo" ] || [ -z "$digest" ]; then
-            echo "::error::missing image repository or digest from the build job."
-            exit 1
-          fi
-          yq -i ".image.repository = \"${repo}\" | .image.tag = \"${tag}@${digest}\"" .helm/values.yaml
-          yq '.image' .helm/values.yaml
-
-      - name: Lint and render the chart
-        run: |
-          set -euo pipefail
           helm lint .helm
-          helm template ci-check .helm > /dev/null
-          helm template ci-check .helm --set ingress.enabled=true > /dev/null
+          helm template ci .helm > /dev/null
+          helm template ci .helm --set ingress.enabled=true > /dev/null
 
-      - name: Login to OCI registry for Helm
-        if: env.PUSH == 'true'
-        run: |
-          set -euo pipefail
-          echo "${REGISTRY_ACCESS_TOKEN}" | helm registry login "${REGISTRY_HOST}" \
-            -u "${{ github.actor }}" --password-stdin
-
-      - name: Package and push chart
-        if: env.PUSH == 'true'
-        id: push
-        run: |
-          set -euo pipefail
-          chart_name=$(yq -r '.name' .helm/Chart.yaml)
-          # Always the dev channel, including on the default branch, so that
-          # .../helm holds nothing but tagged releases.
-          chart_repo="oci://${REGISTRY_HOST}/${REPOSITORY_LOWER}/helm/dev"
-          helm package .helm --destination dist
-          helm push "dist/${chart_name}-${DEV_VERSION}.tgz" "$chart_repo" 2>&1 | tee push.log
-          digest=$(grep -oE 'sha256:[0-9a-f]{64}' push.log | head -n1)
-          echo "ref=${chart_repo#oci://}/${chart_name}@${digest}" >> "$GITHUB_OUTPUT"
-
-      - name: Login to OCI registry for cosign
-        # helm registry login writes to Helm's own credential store
-        # (~/.config/helm/registry/config.json). cosign reads the Docker
-        # keychain (~/.docker/config.json), so it needs its own login.
-        if: env.PUSH == 'true'
-        uses: docker/login-action@v4
+      - name: Login to Docker Hardened Images registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          registry: ${{ env.REGISTRY_HOST }}
-          username: ${{ github.actor }}
-          password: ${{ env.REGISTRY_ACCESS_TOKEN }}
+          registry: dhi.io
+          username: ${{ secrets.DHI_USERNAME }}
+          password: ${{ secrets.DHI_TOKEN }}
 
-      - name: Install cosign
-        if: env.PUSH == 'true'
-        uses: sigstore/cosign-installer@v4.1.2
-
-      - name: Sign the chart
-        if: env.PUSH == 'true'
-        run: |
-          set -euo pipefail
-          cosign sign --yes "${{ steps.push.outputs.ref }}"
+      - name: Build and smoke-test the image
+        run: ENGINE=docker test/smoke.sh
