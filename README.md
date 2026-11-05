@@ -4,7 +4,7 @@
 
 ## Play multiplayer Quake III Arena in your browser with Podman / Docker
 
-[![GitHub Container Registry](https://img.shields.io/badge/GHCR-jackbrenn%2Fquakejs--rootless-blue?style=for-the-badge&logo=github)](https://github.com/JackBrenn/quakejs-rootless/pkgs/container/quakejs-rootless)
+[![GitHub Container Registry](https://img.shields.io/badge/GHCR-jackbrenn%2Fquakejs--rootless-blue?style=for-the-badge&logo=github)](https://github.com/JackBrenn/quakejs-rootless/releases/)
 
 </div>
 
