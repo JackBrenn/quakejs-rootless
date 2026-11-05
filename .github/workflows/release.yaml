@@ -88,9 +88,9 @@ jobs:
             if [ -z "$bump" ]; then
               msg=$(git log -1 --pretty=%B)
               case "$msg" in
-                *'#major'*) bump=major ;;
-                *'#minor'*) bump=minor ;;
-                *)          bump=patch ;;
+                *'#major'*) bump='major' ;;
+                *'#minor'*) bump='minor' ;;
+                *)          bump='patch' ;;
               esac
             fi
             echo "Latest release: v$latest, bump: $bump"

@@ -24,6 +24,7 @@ node build/ioq3ded.js +set fs_game "$FS_GAME" +set dedicated 1 \
 
 status=0
 wait -n || status=$?
+# shellcheck disable=SC2046 # one argument per job PID is intended
 kill -TERM $(jobs -p) 2>/dev/null || true
 wait || true
 exit "$status"
