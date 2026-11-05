@@ -1,34 +1,7 @@
-#Builder
-#Hardened image
-# Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:09943fbda2242d48da7d9ebe54a2112f43c37231bfc3e742daafee1846dee8f9 AS builder
+# All base images are Docker Hardened Images: log in to dhi.io before building.
 
-ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
-
-RUN apt-get update && \
-    apt-get upgrade -y -o Dpkg::Options::="--force-confnew" && \
-    apt-get install -y --no-install-recommends \
-        curl \
-        ca-certificates && \
-    echo 'adm:x:4:' >> /etc/group && \
-    echo 'www-data:x:33:' >> /etc/group && \
-    echo 'www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin' >> /etc/passwd && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x -o /tmp/setup_22.x && \
-    EXPECTED_HASH="3006f2db559850b2ecd25296f918e30bb156f04589b1d92af4c60f7b82005c77b69917d15265bff44b90f3bf6f992062fc305e2c85d0d0efef41edef7360baab" && \
-    ACTUAL_HASH=$(sha512sum /tmp/setup_22.x | awk '{print $1}') && \
-    if [ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]; then \
-        echo "ERROR: Hash verification failed for setup_22.x" && \
-        echo "  Expected: $EXPECTED_HASH" && \
-        echo "  Actual:   $ACTUAL_HASH" && \
-        exit 1; \
-    fi && \
-    bash /tmp/setup_22.x && \
-    rm -f /tmp/setup_22.x && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-get install -y --no-install-recommends nginx-light && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Node.js and the game server's npm dependencies
+FROM dhi.io/node:22-debian13-dev@sha256:a76783c3f0e74ffffa624d3849268d2319cc6feacacb8f16c03fa6b6acde1e17 AS node
 
 COPY ./quakejs /quakejs
 WORKDIR /quakejs
@@ -49,29 +22,29 @@ RUN sed -i \
     && ! grep -q "'ws://' + addr" html/ioquake3.js \
     && grep -q "typeof location!=='undefined'" html/ioquake3.js
 
-#Hardened image
-# Must be logged in to dhi.io (Docker Hardened Images)
-FROM dhi.io/debian-base@sha256:51579566517b831c425e67462ea8f8c5d7cc8deca960f81a6584a38e0a8d9c11
+# nginx-light. The base image lacks the adm and www-data accounts and the
+# update-rc.d tool that the nginx packages' install scripts expect.
+FROM dhi.io/debian-base@sha256:09943fbda2242d48da7d9ebe54a2112f43c37231bfc3e742daafee1846dee8f9 AS nginx
 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=UTC
+RUN echo 'adm:x:4:' >> /etc/group && \
+    echo 'www-data:x:33:' >> /etc/group && \
+    echo 'www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin' >> /etc/passwd && \
+    apt-get update && \
+    apt-get upgrade -y -o Dpkg::Options::="--force-confnew" && \
+    apt-get install -y --no-install-recommends init-system-helpers nginx-light && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy required binaries
-COPY --from=builder /usr/bin/node /usr/bin/node
+FROM dhi.io/debian-base@sha256:51579566517b831c425e67462ea8f8c5d7cc8deca960f81a6584a38e0a8d9c11
 
-# Copy core runtime libraries (Node.js, Nginx, Bash dependencies)
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/x86_64-linux-gnu/libcrypt.so.1
+COPY --from=node /usr/bin/node /usr/bin/node
+COPY --from=node /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 /usr/lib/x86_64-linux-gnu/
+COPY --from=nginx /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx /usr/lib/x86_64-linux-gnu/libpcre2-8.so.0 /usr/lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/x86_64-linux-gnu/
+COPY --from=nginx /etc/nginx/mime.types /etc/nginx/mime.types
 
-COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
-COPY --from=builder /etc/nginx /etc/nginx
-COPY --from=builder /usr/lib/nginx /usr/lib/nginx
-COPY --from=builder /var/lib/nginx /var/lib/nginx
-COPY --from=builder /usr/share/nginx /usr/share/nginx
-
-COPY --from=builder --chown=65532:65532 /quakejs /quakejs
+COPY --from=node --chown=65532:65532 /quakejs /quakejs
 
 RUN mkdir -p /home/nonroot/www && \
     chown -R 65532:65532 /home/nonroot/www /quakejs
