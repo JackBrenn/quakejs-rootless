@@ -9,11 +9,9 @@ WORKDIR /quakejs
 COPY quakejs/package.json quakejs/package-lock.json ./
 RUN npm ci --omit=dev
 COPY quakejs/build/ioq3ded.js build/
-COPY server.cfg base/baseq3/server.cfg
-COPY server.cfg base/cpma/server.cfg
 COPY quakejs/html/ /srv/www/
 COPY include/assets/ /srv/www/assets/
-RUN chmod -R go-w /quakejs /srv/www
+RUN mkdir -p base/baseq3 base/cpma && chmod -R go-w /quakejs /srv/www
 
 # nginx-light. The base image lacks the adm and www-data accounts and the
 # update-rc.d tool that the nginx packages' install scripts expect.
@@ -40,6 +38,7 @@ COPY --from=nginx /etc/nginx/mime.types /etc/nginx/mime.types
 # Everything is owned by root and read-only to the server user, except the
 # game data directory, which the game server fills at startup.
 COPY --chmod=644 nginx.conf /etc/nginx/nginx.conf
+COPY --chmod=644 server.cfg /etc/quakejs/server.cfg
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 COPY --chmod=644 COPYING LICENSE.MIT /usr/share/doc/quakejs-rootless/
 COPY --from=node /srv/www /srv/www

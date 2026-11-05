@@ -8,6 +8,11 @@ case "${FS_GAME:=baseq3}" in
     *) echo "FS_GAME must be baseq3 or cpma, not '$FS_GAME'" >&2; exit 1 ;;
 esac
 
+# Copy in server.cfg (the image's, or one mounted over /etc/quakejs/server.cfg)
+# unless one is already mounted in the game data directory.
+cfg=/quakejs/base/$FS_GAME/server.cfg
+[ -e "$cfg" ] || { mkdir -p "${cfg%/*}"; cp /etc/quakejs/server.cfg "$cfg"; }
+
 trap 'kill -TERM $(jobs -p) 2>/dev/null || true' TERM INT
 
 nginx -g 'daemon off;' &
