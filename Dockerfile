@@ -4,7 +4,7 @@
 # files the server and nginx read, with write access for group and others
 # removed whatever the build host's umask. (COPY --chmod is not used for
 # these: Docker's BuildKit applies its mode to directories it creates.)
-FROM dhi.io/node:24-debian13-dev@sha256:24214ddb02c90cb64829112570250e1723148bdae9ba8b181f7c1cd675cc3da6 AS node
+FROM dhi.io/node:24-debian13-dev@sha256:c470ac1a36644b3633ddd65118672ecb8ede1767603d5fbeb34b9e0f51f8f7d7 AS node
 
 WORKDIR /quakejs
 COPY quakejs/package.json quakejs/package-lock.json ./
@@ -19,7 +19,7 @@ RUN mkdir -p base/baseq3 base/cpma && \
 
 # nginx-light. The base image lacks the adm and www-data accounts and the
 # update-rc.d tool that the nginx packages' install scripts expect.
-FROM dhi.io/debian-base@sha256:61025cea33d5910165ced8b33edd3f6b6bfe161e129174887936a1b9a1442b20 AS nginx
+FROM dhi.io/debian-base@sha256:1c764d726e70d878d3fedf739fd20fc4d1706a7f677e53ff4030a0eeb4fd6424 AS nginx
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN echo 'adm:x:4:' >> /etc/group && \
@@ -31,7 +31,7 @@ RUN echo 'adm:x:4:' >> /etc/group && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-FROM dhi.io/debian-base@sha256:834d20c209fe4aac50dc95877d68d421f97ea38a905586bfdaf938bebb3924c0
+FROM dhi.io/debian-base@sha256:c5274bb35ad2972614a2dbfa4d9727c3f3c0605081b88d1fbae560e53cd8a65a
 
 COPY --from=node /usr/bin/node /usr/bin/node
 COPY --from=node /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 /usr/lib/x86_64-linux-gnu/
