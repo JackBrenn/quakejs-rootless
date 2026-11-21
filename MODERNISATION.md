@@ -47,7 +47,8 @@ read-only root filesystem:
 - No Content-Security-Policy violations with the tightened policy.
 
 Play-tested by hand in Firefox and Brave on 2026-11-21, on a 240 Hz display;
-both changes in decision 6 were confirmed there. Safari is untested.
+both changes in decision 6 were confirmed there, and it was played again
+after the review changes. Safari is untested.
 
 **Not tested**: a build with Docker/BuildKit (only podman is installed here).
 
