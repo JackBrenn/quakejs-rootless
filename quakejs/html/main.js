@@ -13,6 +13,7 @@ const SOCKET_URL = location.origin.replace(/^http/, 'ws') + '/';
 
 const play = document.getElementById('play');
 const status = document.getElementById('status');
+let engine;
 
 // Asks the game server which map it is running.
 function serverInfo() {
@@ -135,22 +136,30 @@ async function start() {
 		// Every address the engine sends to is this one WebSocket endpoint.
 		websocket: { url: SOCKET_URL },
 		preRun: [(module) => {
+			engine = module;
 			for (const file of files) {
 				module.FS.mkdirTree('/' + file.path.replace(/\/[^/]*$/, ''));
 				module.FS.writeFile('/' + file.path, file.bytes);
 			}
 		}],
-		// "quit" in the game returns to this page's first screen.
 		// The engine reports through stderr; none of it is an error to the browser.
-		printErr: (line) => console.log(line),
-		onExit: (code) => (code ? stopped() : location.reload()),
-		onAbort: stopped,
+		// It has no way to tell the page that it is exiting, but it always prints
+		// this line first. "quit" in the game returns to this page's first screen.
+		printErr: (line) => {
+			console.log(line);
+			const reason = /^----- Client Shutdown \((.*)\) -----$/.exec(line)?.[1];
+			if (reason && reason !== 'Game directory changed') {
+				setTimeout(() => (reason.startsWith('Client fatal') ? stopped(reason) : location.reload()));
+			}
+		},
+		onAbort: () => stopped('The engine aborted'),
 	});
 }
 
-function stopped() {
+function stopped(reason) {
+	engine?.pauseMainLoop();
 	document.body.className = '';
-	status.textContent = 'The game stopped after an error; the browser console has the details. Reload the page to play again.';
+	status.textContent = `${reason}. The browser console has the details; reload the page to play again.`;
 }
 
 play.onclick = () => start().catch((error) => {
