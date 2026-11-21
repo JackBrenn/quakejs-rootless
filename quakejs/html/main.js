@@ -10,6 +10,8 @@ const INSTALLERS = [
 	{ name: 'linuxq3apoint-1.32b-3.x86.run', scriptLines: 355, paks: /^baseq3\/pak\d\.pk3$/ },
 ];
 const SOCKET_URL = location.origin.replace(/^http/, 'ws') + '/';
+// Where the engine keeps the player's settings (name, controls, video).
+const CONFIG_DIR = '/home/web_user/.config/Quake3/demoq3';
 
 const play = document.getElementById('play');
 const status = document.getElementById('status');
@@ -141,6 +143,10 @@ async function start() {
 				module.FS.mkdirTree('/' + file.path.replace(/\/[^/]*$/, ''));
 				module.FS.writeFile('/' + file.path, file.bytes);
 			}
+			// The engine's files live in memory. Keep the settings between visits.
+			module.FS.mkdirTree(CONFIG_DIR);
+			module.FS.writeFile(CONFIG_DIR + '/q3config.cfg', stored('q3config') || '');
+			window.addEventListener('pagehide', () => stored('q3config', module.FS.readFile(CONFIG_DIR + '/q3config.cfg', { encoding: 'utf8' })));
 		}],
 		// The engine reports through stderr; none of it is an error to the browser.
 		// It has no way to tell the page that it is exiting, but it always prints
@@ -154,6 +160,15 @@ async function start() {
 		},
 		onAbort: () => stopped('The engine aborted'),
 	});
+}
+
+// Reads or writes this browser's storage, which may be unavailable (private windows).
+function stored(key, value) {
+	try {
+		return value === undefined ? localStorage.getItem(key) : localStorage.setItem(key, value);
+	} catch {
+		return null;
+	}
 }
 
 function stopped(reason) {
