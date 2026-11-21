@@ -38,7 +38,7 @@ RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
 # nginx-light, and the game server compiled for Linux. The base image lacks the
 # adm and www-data accounts and the update-rc.d tool that the nginx packages'
 # install scripts expect.
-FROM dhi.io/debian-base@sha256:1c764d726e70d878d3fedf739fd20fc4d1706a7f677e53ff4030a0eeb4fd6424 AS native
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:1aa0a2307eea88ae00d07c7b3c8e804187ee272ccc89cde7b51667b3b065fb1d AS native
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN echo 'adm:x:4:' >> /etc/group && \
@@ -83,7 +83,7 @@ RUN tail -n +165 /tmp/linuxq3ademo-1.11-6.x86.gz.sh | tar -xzO Help/Q3A_EULA.txt
 # whether a file changed by its time and size, so each served file gets a time
 # taken from its content: a new image then only makes players download again
 # what really changed.
-FROM dhi.io/node:24-debian13-dev@sha256:c470ac1a36644b3633ddd65118672ecb8ede1767603d5fbeb34b9e0f51f8f7d7 AS node
+FROM dhi.io/node:24-debian13-dev@sha256:9354eb131b6856f43fc9c7eba8cb54f5d0200fe7fbf5495bf6065be8a4a43e3b AS node
 
 WORKDIR /quakejs
 COPY quakejs/package.json quakejs/package-lock.json ./
@@ -104,7 +104,7 @@ RUN mkdir base && \
     chmod -R u=rwX,go=rX /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless && \
     find /srv/www -type f -exec sh -c 'touch -d "@$((0x$(sha256sum "$1" | cut -c1-7)))" "$1"' _ {} \;
 
-FROM dhi.io/debian-base@sha256:c5274bb35ad2972614a2dbfa4d9727c3f3c0605081b88d1fbae560e53cd8a65a
+FROM dhi.io/debian-base:trixie-debian13@sha256:70bc646aa7f20ee881733c5ff335a5a78d41b9179625f6f00bf5ec1d1a9d5707
 
 COPY --from=node /usr/bin/node /usr/bin/node
 COPY --from=node /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 /usr/lib/x86_64-linux-gnu/
