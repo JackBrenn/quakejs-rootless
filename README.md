@@ -20,6 +20,10 @@ podman run -d --name quakejs -p 8080:8080 ghcr.io/jackbrenn/quakejs-rootless:lat
 Then open <http://localhost:8080>. `docker run` takes the same arguments, and
 `docker compose up -d` uses this repository's [`docker-compose.yml`](docker-compose.yml).
 
+Players need a browser with WebGL 2; it is tested in Firefox and in
+Chromium-based browsers. The first visit downloads about 95 MB of game data,
+which the browser keeps for later visits, along with the player's settings.
+
 ## Kubernetes (Helm)
 
 Each release publishes the chart in `.helm/` as an OCI artifact, with the image
@@ -58,7 +62,8 @@ game data into an `emptyDir` when it starts.
   connections per client at the proxy.
 - **Maps**: a `.pk3` in `include/assets/baseq3/` named after the map it
   holds, such as `q3wctf1.pk3`, is fetched by players only when the server
-  plays that map.
+  plays that map. A change to such a map sends it from the game server, which
+  needs `sv_allowDownload 1` as in the image's `server.cfg`.
 
 ## Upgrading from v2
 
@@ -110,8 +115,11 @@ add retail `.pk3` files to an image you publish.
 ## Credits
 
 - The [ioquake3](https://github.com/ioquake/ioq3) project: the engine, including its web port
-- [@inolen](https://github.com/inolen): [QuakeJS](https://github.com/inolen/quakejs), the browser port this project used before
-- [@nerosketch](https://github.com/nerosketch): [QuakeJS fork](https://github.com/nerosketch/quakejs) with local server support
-- [@treyyoder](https://github.com/treyyoder): [quakejs-docker](https://github.com/treyyoder/quakejs-docker)
-- [@mescanne](https://github.com/mescanne): single-port nginx WebSocket routing
+- [@treyyoder](https://github.com/treyyoder): [quakejs-docker](https://github.com/treyyoder/quakejs-docker), which this project started from
 - [@jonasbg](https://github.com/jonasbg): Helm chart and OCI publishing
+
+Versions before v3 were built on [QuakeJS](https://github.com/inolen/quakejs)
+by [@inolen](https://github.com/inolen), its
+[fork](https://github.com/nerosketch/quakejs) by
+[@nerosketch](https://github.com/nerosketch) with local server support, and
+single-port nginx WebSocket routing by [@mescanne](https://github.com/mescanne).
