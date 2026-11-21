@@ -96,6 +96,9 @@ both changes in decision 6 were confirmed there. Safari is untested.
 - **Some point-release maps show missing textures** (for example pro-q3dm6).
   The textures are not in the game data here; the current release looks the
   same.
+- **Leaving a game shows the "enter your CD key" screen once.** The game's
+  own menu code asks for it; Accept or Escape passes it. Players normally
+  never see the main menu, since `quit` returns to the page.
 - **High-DPI displays render at CSS-pixel resolution.** The web build's SDL
   layer sizes the canvas that way.
 - **`quit` detection reads the engine's log line.** On the web the engine

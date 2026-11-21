@@ -143,6 +143,8 @@ async function start() {
 				module.FS.mkdirTree('/' + file.path.replace(/\/[^/]*$/, ''));
 				module.FS.writeFile('/' + file.path, file.bytes);
 			}
+			// The engine has its own copy now: let go of the downloads.
+			files.length = data.length = 0;
 			// The engine's files live in memory. Keep the settings between visits.
 			module.FS.mkdirTree(CONFIG_DIR);
 			module.FS.writeFile(CONFIG_DIR + '/q3config.cfg', stored('q3config') || '');
