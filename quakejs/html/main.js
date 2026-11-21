@@ -1,6 +1,5 @@
 // Shows the demo licence, downloads the game data, then starts the engine and
 // connects to the game server behind the address that served this page.
-// Query string parameters become console commands, e.g. ?name%20Player.
 import ioquake3 from './ioquake3.js';
 
 // id's installers are served intact. Each is a shell script followed by a
@@ -116,11 +115,6 @@ async function start() {
 		await unpack(installer, data[i], (path, bytes) => files.push({ path, bytes }));
 	}
 
-	const commands = [];
-	for (const token of location.search.slice(1).split(/[&=]/).filter(Boolean)) {
-		const words = decodeURIComponent(token).split(' ');
-		commands.push('+' + words[0], ...words.slice(1));
-	}
 	document.body.className = 'playing';
 	await ioquake3({
 		canvas: document.getElementById('canvas'),
@@ -132,7 +126,6 @@ async function start() {
 			// Draw at the window's size, and follow it when it changes.
 			'+set', 'r_fullscreen', '0', '+set', 'r_allowResize', '1', '+set', 'r_mode', '-1',
 			'+set', 'r_customwidth', window.innerWidth, '+set', 'r_customheight', window.innerHeight,
-			...commands,
 			'+connect', location.host,
 		].map(String),
 		// Every address the engine sends to is this one WebSocket endpoint.
