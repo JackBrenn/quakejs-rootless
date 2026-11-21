@@ -48,7 +48,8 @@ permissions:
 
 jobs:
   create-tag:
-    if: "!contains(github.event.head_commit.message, '[skip release]')"
+    # Releases come from master only, also when started by hand.
+    if: "github.ref == 'refs/heads/master' && !contains(github.event.head_commit.message, '[skip release]')"
     runs-on: ubuntu-latest
     permissions:
       contents: write     # required to push the new tag
@@ -75,8 +76,8 @@ jobs:
           else
             # Highest existing vX.Y.Z, ignoring pre-releases so an rc can never
             # become the base for the next stable version.
-            latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' \
-                     | grep -Ev -- '-' \
+            latest=$(git tag -l 'v[0-9]*' \
+                     | grep -Ex 'v[0-9]+\.[0-9]+\.[0-9]+' \
                      | sed 's/^v//' \
                      | sort -V \
                      | tail -n1)

@@ -52,10 +52,10 @@ game data into an `emptyDir` when it starts.
 - **`server.cfg`**: the server settings. Edit it and rebuild, or mount your own
   over `/etc/quakejs/server.cfg`.
 - **Port 8080** is the only port, so it is all a TLS reverse proxy needs. The
-  game's WebSocket connections use the path `/ws`. Behind a proxy the server
-  sees every player at the proxy's address, so its per-address limits and bans
-  apply to all players together, and a single client can take all of its 256
-  connections: limit connections per client at the proxy.
+  game's WebSocket connections use the path `/ws`. The game server sees every
+  connection at a loopback address of its own, so its bans by address do
+  nothing, and a single client can take all 256 connections: ban and limit
+  connections per client at the proxy.
 - **Maps**: a `.pk3` in `include/assets/baseq3/` named after the map it
   holds, such as `q3wctf1.pk3`, is fetched by players only when the server
   plays that map.
@@ -96,9 +96,10 @@ The project as distributed, images included, is a combined work under the GNU
 GPL, version 2 or later ([`COPYING`](COPYING)). The packaging in this
 repository is also available under MIT; [`LICENSE.MIT`](LICENSE.MIT) lists the
 files it covers. The engine in the image is ioquake3, compiled from the commit
-pinned in the [`Dockerfile`](Dockerfile) with the two small changes made
+pinned in the [`Dockerfile`](Dockerfile) with the four small changes made
 there: that commit of [ioquake/ioq3](https://github.com/ioquake/ioq3), with
-those changes, is its corresponding source.
+those changes, is its corresponding source. Every image carries that source
+archive and the `Dockerfile`, and serves them under `/source/`.
 
 The game data in `include/assets/` is not free software and not under the GPL:
 the Quake III Arena demo, under id Software's demo licence (non-commercial

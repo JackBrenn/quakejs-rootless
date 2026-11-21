@@ -4,7 +4,6 @@
 // each datagram back as one message. Every WebSocket gets its own UDP socket.
 'use strict';
 
-const crypto = require('crypto');
 const dgram = require('dgram');
 const { WebSocketServer } = require('ws');
 
@@ -13,17 +12,20 @@ const SERVER_PORT = 27960; // the game server, on UDP; this bridge listens on th
 // Quake packets are at most 16 KiB, so nothing legitimate is near 64 KiB.
 const bridge = new WebSocketServer({ host: '127.0.0.1', port: SERVER_PORT, maxPayload: 65536 });
 
-bridge.on('connection', (ws, request) => {
+let connections = 0;
+
+bridge.on('connection', (ws) => {
 	if (bridge.clients.size > 256) {
 		ws.terminate();
 		return;
 	}
-	// The game server rate-limits and bans by source address. Send from a
-	// loopback address derived from the client's address (as nginx saw it), so
-	// that one client cannot use up the allowance of the others.
-	const [a, b, c] = crypto.createHash('sha256').update(String(request.headers['x-real-ip'])).digest();
+	// The game server tells clients at one address apart by a number the client
+	// picks, and limits queries per address. Give every connection a loopback
+	// address of its own (127.0.0.1 to 127.255.255.254), so that no client can
+	// pass for another or use up another's allowance.
+	const n = connections++ % 0xfffffe + 1;
 	const udp = dgram.createSocket('udp4');
-	udp.bind(0, `127.${a}.${b}.${1 + c % 254}`);
+	udp.bind(0, `127.${n >> 16}.${n >> 8 & 255}.${n & 255}`);
 	udp.on('message', (packet, from) => {
 		// Like UDP, drop packets for a player who is not keeping up instead of queueing them.
 		if (from.port === SERVER_PORT && ws.bufferedAmount < 1 << 20) {

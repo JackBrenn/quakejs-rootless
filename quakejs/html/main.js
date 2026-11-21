@@ -64,7 +64,8 @@ async function download(files) {
 		}
 		const data = new Uint8Array(file.size);
 		const reader = response.body.getReader();
-		for (let at = 0; ;) {
+		let at = 0;
+		for (;;) {
 			const { done, value } = await reader.read();
 			if (done) {
 				break;
@@ -73,6 +74,10 @@ async function download(files) {
 			at += value.length;
 			received += value.length;
 			status.textContent = `Downloading game data: ${Math.round(received / 2 ** 20)} of ${Math.round(total / 2 ** 20)} MB`;
+		}
+		// The size came from the listing; the file may have been replaced since.
+		if (at !== file.size) {
+			throw new Error(`${file.path} is not the size the server listed.`);
 		}
 		downloads.push(data);
 	}
@@ -185,6 +190,7 @@ play.onclick = () => start().catch((error) => {
 
 // Without the licence there is nothing to agree to, so no playing.
 fetch('eula.txt').then(async (response) => {
-	document.getElementById('eula').textContent = response.ok ? await response.text() : `Could not load the licence (HTTP ${response.status}).`;
-	play.disabled = !response.ok;
+	const licence = response.ok && await response.text();
+	document.getElementById('eula').textContent = licence || `Could not load the licence (HTTP ${response.status}).`;
+	play.disabled = !licence;
 });

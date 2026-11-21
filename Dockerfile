@@ -1,8 +1,8 @@
 # The dhi.io base images are Docker Hardened Images: log in to dhi.io before building.
 
-# The engine is built from this ioquake3 commit, with the two changes made in
-# the web stage below. To update, change the commit and the checksum of its
-# source archive together.
+# The engine is built from this ioquake3 commit, with the four small changes
+# made in the web and native stages below. To update, change the commit and
+# the checksum of its source archive together.
 ARG IOQ3_COMMIT=52088b9eae247d8e321c8dc1fb49a879652854f9
 
 FROM scratch AS source
@@ -15,7 +15,7 @@ ADD --checksum=sha256:865d50e632a4d30366c465da96cfcf9067fe2d2abca6496f51b0001973
 # inside the demo's pak0.pk3. Nothing else from this image ships.
 FROM docker.io/emscripten/emsdk:7.0.0@sha256:3803e37bf748ddee14d31cf712fcab09ca367fca83bbefeb78ce4c1f284e6f3f AS web
 
-# The two changes to ioquake3, both for Chromium-based browsers. The build
+# Two changes to the client, both for Chromium-based browsers. The build
 # fails if either no longer applies.
 # 1. It compiles its WebGL shaders at medium float precision, which those
 #    browsers pass on to the graphics driver. Distant surfaces then flicker
@@ -27,7 +27,7 @@ FROM docker.io/emscripten/emsdk:7.0.0@sha256:3803e37bf748ddee14d31cf712fcab09ca3
 COPY --from=source /ioq3.tar.gz /tmp/
 RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
     cd /ioq3/code/renderergl2 && \
-    grep -q 'precision mediump float;' tr_glsl.c && \
+    [ "$(grep -c 'precision mediump float;' tr_glsl.c)" = 2 ] && \
     sed -i 's/precision mediump float;/precision highp float;/' tr_glsl.c && \
     [ "$(grep -c 'tess\.vao->.*Size, NULL, GL_DYNAMIC_DRAW' tr_vbo.c)" = 2 ] && \
     sed -i '/tess\.vao->.*Size, NULL, GL_DYNAMIC_DRAW/d' tr_vbo.c && \
@@ -50,10 +50,23 @@ RUN echo 'adm:x:4:' >> /etc/group && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# The server parses packets from the network, so build it with the usual hardening.
+# The server parses packets from the network, so build it with the usual
+# hardening. Two changes to it; the build fails if either no longer applies.
+# 1. A client that kept asking for the game state made the server queue a copy
+#    of it per request, without limit, until it ran out of memory and exited.
+#    It now sends the game state only when nothing is waiting to go out; the
+#    client's next packet asks again.
+# 2. It refuses to let clients download id's paks, but did not count the
+#    demo's pak0 among them. The demo may only be passed on whole, with its
+#    licence, which is how the web server offers it.
 COPY --from=source /ioq3.tar.gz /tmp/
 RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
-    CFLAGS='-fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE' LDFLAGS='-pie -Wl,-z,relro,-z,now' \
+    cd /ioq3/code/server && \
+    [ "$(grep -c 'SV_SendClientGameState() for %s' sv_client.c)" = 1 ] && \
+    sed -i '/SV_SendClientGameState() for %s/i if ( client->netchan.unsentFragments || client->netchan_start_queue ) return;' sv_client.c && \
+    [ "$(grep -c 'FS_idPak(pakbuf, BASEGAME, NUM_ID_PAKS);' sv_client.c)" = 1 ] && \
+    sed -i 's/FS_idPak(pakbuf, BASEGAME, NUM_ID_PAKS);/FS_idPak(pakbuf, BASEGAME, NUM_ID_PAKS) || FS_idPak(pakbuf, "demoq3", 1);/' sv_client.c && \
+    CFLAGS='-fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE' LDFLAGS='-pie -s -Wl,-z,relro,-z,now' \
     cmake -S /ioq3 -B /build -DCMAKE_BUILD_TYPE=Release -DBUILD_CLIENT=OFF -DBUILD_RENDERER_GL1=OFF \
         -DBUILD_RENDERER_GL2=OFF -DBUILD_GAME_LIBRARIES=OFF -DBUILD_GAME_QVMS=OFF && \
     cmake --build /build -j "$(nproc)"
@@ -61,11 +74,11 @@ RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
 # The licence the web client shows comes out of the demo installer itself.
 COPY include/assets/linuxq3ademo-1.11-6.x86.gz.sh /tmp/
 RUN tail -n +165 /tmp/linuxq3ademo-1.11-6.x86.gz.sh | tar -xzO Help/Q3A_EULA.txt | \
-    iconv -f latin1 -t utf-8 > /eula.txt
+    iconv -f latin1 -t utf-8 > /eula.txt && [ -s /eula.txt ]
 
 # Node.js and the bridge's npm dependency. This stage also gathers the files
-# the servers read, with write access for group and others removed whatever
-# the build host's umask. (COPY --chmod is not used for these: Docker's
+# the servers read, readable by all and writable by root alone whatever the
+# build host's umask. (COPY --chmod is not used for these: Docker's
 # BuildKit applies its mode to directories it creates.) nginx tells browsers
 # whether a file changed by its time and size, so each served file gets a time
 # taken from its content: a new image then only makes players download again
@@ -81,10 +94,14 @@ COPY include/assets/ /srv/www/assets/
 COPY --from=web /build/Release/ioquake3.js /build/Release/ioquake3.wasm /srv/www/
 COPY --from=web /build/vm.pk3 /srv/www/assets/demoq3/
 COPY --from=native /eula.txt /srv/www/
+# The GPL asks that the engine's source accompany it: every copy of this image
+# serves the source it was built from, and this file, which holds the changes.
+COPY --from=source /ioq3.tar.gz /srv/www/source/
+COPY Dockerfile /srv/www/source/
 COPY server.cfg /etc/quakejs/
 COPY COPYING LICENSE.MIT /usr/share/doc/quakejs-rootless/
 RUN mkdir base && \
-    chmod -R go-w /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless && \
+    chmod -R u=rwX,go=rX /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless && \
     find /srv/www -type f -exec sh -c 'touch -d "@$((0x$(sha256sum "$1" | cut -c1-7)))" "$1"' _ {} \;
 
 FROM dhi.io/debian-base@sha256:c5274bb35ad2972614a2dbfa4d9727c3f3c0605081b88d1fbae560e53cd8a65a

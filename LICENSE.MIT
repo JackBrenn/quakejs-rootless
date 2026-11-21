@@ -15,11 +15,13 @@ Covered by this licence:
     server.cfg
     .helm/**
     .github/workflows/**
-    quakejs/**                    - the web page and the WebSocket bridge
+    quakejs/**                    - the web page and the WebSocket bridge,
+                                    except its icon
     test/**
 
 NOT covered by this licence:
 
+    quakejs/html/favicon.ico      - inherited from the QuakeJS project
     include/assets/**             - Quake III Arena game content and third-party
                                     maps; proprietary, see README.md
     ioquake3                      - not in this repository; the image build
