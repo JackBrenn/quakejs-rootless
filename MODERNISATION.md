@@ -10,7 +10,8 @@ with podman and passes `test/smoke.sh`. Nothing has been pushed.
 
 The two prebuilt QuakeJS engine files are gone. The image build now compiles
 [ioquake/ioq3](https://github.com/ioquake/ioq3) at a pinned commit
-(`52088b9`, 2026-11-04) **without any patches**:
+(`52088b9`, 2026-11-04) with **one one-line change** (shader precision, see
+decision 6):
 
 ```
 browser ── http(s)/ws(s) :8080 ──> nginx ──┬─ static: page, ioquake3.js/.wasm, game data
@@ -45,9 +46,7 @@ read-only root filesystem:
 - `helm lint` and `helm template` pass.
 - No Content-Security-Policy violations with the tightened policy.
 
-**Not verified**, because headless Chromium cannot show it: mouse look under
-pointer lock, sound output, fullscreen (Alt+Enter), and how it looks in
-Firefox and Safari. A person needs to play it once in a desktop browser.
+Play-tested by hand in Firefox and Brave on 2026-11-21. Safari is untested.
 
 **Not tested**: a build with Docker/BuildKit (only podman is installed here).
 
@@ -62,10 +61,14 @@ Firefox and Safari. A person needs to play it once in a desktop browser.
 3. **Game code** — QVMs built from ioquake3 source.
 4. **Bridge** — Node with `ws`, as already in the image.
 5. **emsdk** — `emscripten/emsdk:7.0.0` pinned by digest, build stage only.
-6. **Per-pixel lighting off** — the page starts the engine with
-   `r_normalMapping 0` and `r_specularMapping 0`. With either on, the opengl2
-   renderer draws most surfaces white on WebGL. Quake 3's own art has no
-   normal or specular maps, so nothing is lost.
+6. **Shaders at high float precision** — the only change to ioquake3, a
+   `sed` in the Dockerfile's web stage. Upstream compiles its WebGL shaders
+   with `precision mediump float`. Firefox on desktop OpenGL is unaffected;
+   Chromium-based browsers (Chrome, Brave) hand it to an OpenGL ES driver
+   that applies it.
+   Depth then loses precision, so distant surfaces flicker through each
+   other, and per-pixel lighting draws surfaces white. Found from a
+   play-test in Brave; verified fixed there. Worth reporting upstream.
 7. **Maps on demand** — the page fetches the `pakN` files and the map being
    played; any other map pak is downloaded by the engine from the game server
    when the map changes (`sv_allowDownload 1`, `sv_dlRate 1000` in
@@ -94,28 +97,28 @@ Firefox and Safari. A person needs to play it once in a desktop browser.
   cannot exit its runtime, so the page watches for
   `----- Client Shutdown (...) -----`. If upstream rewords that line, `quit`
   stops returning to the first screen; nothing else breaks.
-- Two things worth reporting upstream: the white surfaces with normal or
-  specular mapping on WebGL, and `quit` not ending the Emscripten runtime.
+- Two things worth reporting upstream: the medium shader precision
+  (decision 6), and `quit` not ending the Emscripten runtime.
 
 ## Testing notes
 
 - The in-app browser pane has no WebGL. Tests used Playwright's Chromium
   with `--enable-gpu --use-angle=gl`. Software GL (SwiftShader) fails in the
-  renderer's shader setup and is no use.
+  renderer's shader setup and is no use. Brave runs the same way through
+  Playwright's `executablePath`.
 - `podman run --rm -p 8080:8080 localhost/quakejs-rootless:dev`, then open
   <http://localhost:8080>.
 
 ## Left to do: phase 7, merge back
 
-1. Play it in a desktop browser (see "Not verified").
-2. Restore `.github/workflows/ci.yaml` (removed here because this repository
+1. Restore `.github/workflows/ci.yaml` (removed here because this repository
    lives on Gitea). `release.yaml` is unchanged and its path filters still
    match.
-3. Bring the branch into quakejs-rootless as v3.0.0. Breaking changes for
+2. Bring the branch into quakejs-rootless as v3.0.0. Breaking changes for
    the release notes: CPMA mode, `FS_GAME` and the Helm value `quake.fsGame`
    are gone; game data files lost their checksum prefixes and
    `manifest.json`.
-4. Branch CI green on Docker, then an authorised push and merge.
+3. Branch CI green on Docker, then an authorised push and merge.
 
 ## Working rules (carried over from quakejs-rootless)
 

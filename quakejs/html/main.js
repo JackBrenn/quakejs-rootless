@@ -132,8 +132,6 @@ async function start() {
 			// Draw at the window's size, and follow it when it changes.
 			'+set', 'r_fullscreen', '0', '+set', 'r_allowResize', '1', '+set', 'r_mode', '-1',
 			'+set', 'r_customwidth', window.innerWidth, '+set', 'r_customheight', window.innerHeight,
-			// Per-pixel lighting renders surfaces white on WebGL, and Quake 3's own art has no use for it.
-			'+set', 'r_normalMapping', '0', '+set', 'r_specularMapping', '0',
 			...commands,
 			'+connect', location.host,
 		].map(String),
