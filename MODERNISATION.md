@@ -70,14 +70,13 @@ Firefox and Safari. A person needs to play it once in a desktop browser.
    played; any other map pak is downloaded by the engine from the game server
    when the map changes (`sv_allowDownload 1`, `sv_dlRate 1000` in
    `server.cfg`). Convention: a map pak is named after its map.
-8. **CPMA removed — needs your confirmation.** CPMA 1.48 refuses to start
+8. **CPMA removed** (confirmed 2026-11-21). CPMA 1.48 refuses to start
    without its full official map pack, and needs a player model only the
    retail game has. QuakeJS got past both with two hacks in its engine that
    rewrote CPMA's bytecode as it loaded. Unmodified ioquake3 has no such
-   hacks. Keeping CPMA would mean carrying equivalent engine patches, or
-   shipping the official CPMA map pack and still patching for the model. It
-   is removed in its own commit (`5825918`), so `git revert` restores the
-   files if you want to pursue it.
+   hacks, and keeping CPMA would have meant carrying equivalent engine
+   patches. A container started with `FS_GAME` set to anything but `baseq3`
+   exits with a message saying to remove it.
 
 ## Known limits
 
@@ -109,14 +108,14 @@ Firefox and Safari. A person needs to play it once in a desktop browser.
 ## Left to do: phase 7, merge back
 
 1. Play it in a desktop browser (see "Not verified").
-2. Confirm or reverse the CPMA removal.
-3. Restore `.github/workflows/ci.yaml` (removed here because this repository
+2. Restore `.github/workflows/ci.yaml` (removed here because this repository
    lives on Gitea). `release.yaml` is unchanged and its path filters still
    match.
-4. Bring the branch into quakejs-rootless as v3.0.0. Breaking changes for
-   the release notes: `FS_GAME` and the Helm value `quake.fsGame` are gone;
-   game data files lost their checksum prefixes and `manifest.json`.
-5. Branch CI green on Docker, then an authorised push and merge.
+3. Bring the branch into quakejs-rootless as v3.0.0. Breaking changes for
+   the release notes: CPMA mode, `FS_GAME` and the Helm value `quake.fsGame`
+   are gone; game data files lost their checksum prefixes and
+   `manifest.json`.
+4. Branch CI green on Docker, then an authorised push and merge.
 
 ## Working rules (carried over from quakejs-rootless)
 
