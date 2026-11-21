@@ -6,7 +6,6 @@ html, body {
 	font: 15px/1.5 sans-serif;
 }
 
-/* The engine draws at the window's size; it restarts its renderer on resize. */
 canvas {
 	position: fixed;
 	inset: 0;

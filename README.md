@@ -52,8 +52,9 @@ game data into an `emptyDir` when it starts.
 - **`server.cfg`**: the server settings. Edit it and rebuild, or mount your own
   over `/etc/quakejs/server.cfg`.
 - **Port 8080** is the only port, so it is all a TLS reverse proxy needs.
-- **Maps**: a `.pk3` in `include/assets/baseq3/` named after the map it holds, such as `q3wctf1.pk3`, is fetched by players only when the
-  server plays that map.
+- **Maps**: a `.pk3` in `include/assets/baseq3/` named after the map it
+  holds, such as `q3wctf1.pk3`, is fetched by players only when the server
+  plays that map.
 
 ## Build
 

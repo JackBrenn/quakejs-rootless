@@ -21,7 +21,10 @@ let engine;
 function serverInfo() {
 	return new Promise((resolve, reject) => {
 		const socket = new WebSocket(SOCKET_URL);
-		const fail = () => reject(new Error('The game server is not answering. Reload the page to try again.'));
+		const fail = () => {
+			socket.close();
+			reject(new Error('The game server is not answering. Reload the page to try again.'));
+		};
 		socket.binaryType = 'arraybuffer';
 		socket.onopen = () => socket.send(Uint8Array.from('\xff\xff\xff\xffgetinfo', (c) => c.charCodeAt(0)));
 		socket.onmessage = (event) => {
@@ -118,7 +121,6 @@ async function start() {
 		const words = decodeURIComponent(token).split(' ');
 		commands.push('+' + words[0], ...words.slice(1));
 	}
-	const scale = window.devicePixelRatio || 1;
 	document.body.className = 'playing';
 	await ioquake3({
 		canvas: document.getElementById('canvas'),
@@ -127,9 +129,9 @@ async function start() {
 			'+set', 'fs_basegame', 'demoq3',
 			// IPv4 only: the engine's UDP socket is carried over the WebSocket below.
 			'+set', 'net_enabled', '1', '+set', 'cl_allowDownload', '1',
+			// Draw at the window's size, and follow it when it changes.
 			'+set', 'r_fullscreen', '0', '+set', 'r_allowResize', '1', '+set', 'r_mode', '-1',
-			'+set', 'r_customwidth', Math.round(window.innerWidth * scale),
-			'+set', 'r_customheight', Math.round(window.innerHeight * scale),
+			'+set', 'r_customwidth', window.innerWidth, '+set', 'r_customheight', window.innerHeight,
 			// Per-pixel lighting renders surfaces white on WebGL, and Quake 3's own art has no use for it.
 			'+set', 'r_normalMapping', '0', '+set', 'r_specularMapping', '0',
 			...commands,
