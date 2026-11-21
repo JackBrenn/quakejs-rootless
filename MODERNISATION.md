@@ -46,7 +46,8 @@ read-only root filesystem:
 - `helm lint` and `helm template` pass.
 - No Content-Security-Policy violations with the tightened policy.
 
-Play-tested by hand in Firefox and Brave on 2026-11-21. Safari is untested.
+Play-tested by hand in Firefox and Brave on 2026-11-21, on a 240 Hz display;
+both changes in decision 6 were confirmed there. Safari is untested.
 
 **Not tested**: a build with Docker/BuildKit (only podman is installed here).
 
