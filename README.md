@@ -60,6 +60,22 @@ game data into an `emptyDir` when it starts.
   holds, such as `q3wctf1.pk3`, is fetched by players only when the server
   plays that map.
 
+## Upgrading from v2
+
+v3 replaces the QuakeJS engine with ioquake3 built from source. For an
+existing deployment:
+
+- **CPMA mode is gone.** Remove `FS_GAME` (the container stops if it is set to
+  anything but `baseq3`) and the Helm value `quake.fsGame`.
+- **The WebSocket path is `/ws`**, not `/`. A reverse proxy that upgrades
+  connections only on `/` needs adjusting.
+- **`server.cfg` belongs at `/etc/quakejs/server.cfg`.** One mounted at
+  `/quakejs/base/baseq3/server.cfg` now stops the container.
+- **Game data file names** in `include/assets/` lost their checksum prefixes,
+  and `manifest.json` is gone.
+- **Console commands in the page's address** (`?name%20Player`) are no longer
+  run.
+
 ## Build
 
 Pulling the hardened base images needs a dhi.io login (free with a Docker Hub
