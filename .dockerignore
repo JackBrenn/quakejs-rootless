@@ -1,4 +1,4 @@
-node_modules/
+quakejs/node_modules/
 .git/
 .github/
 .helm/

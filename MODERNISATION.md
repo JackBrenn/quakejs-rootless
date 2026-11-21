@@ -23,7 +23,7 @@ browser ── http(s)/ws(s) :8080 ──> nginx ──┬─ static: page, ioqu
 | Browser client | ioquake3 as WebAssembly (2.3 MB, 0.9 MB gzipped), built with emsdk 7.0.0 |
 | Game server | native Linux `ioq3ded` (0.8 MB), built with stack protector, FORTIFY, PIE, full RELRO |
 | Game code | QVMs built from the same ioquake3 source, shipped as `demoq3/vm.pk3` |
-| Network | `quakejs/bridge.js`, 40 lines: one WebSocket ↔ one UDP socket |
+| Network | `quakejs/bridge.js`, 37 lines: one WebSocket ↔ one UDP socket, sent from a loopback address per client address |
 | Web page | `quakejs/html/`: licence screen, download with progress, installer unpacking, engine start |
 | Game data | plain file names, found through nginx JSON directory listings; no manifest |
 
@@ -91,6 +91,10 @@ both changes in decision 6 were confirmed there. Safari is untested.
 - **First load is about 96 MB** (demo installer 49, point release 31, extra
   paks 19), cached by the browser afterwards. The old client fetched about
   the same.
+- **One client can hold all 256 bridge connections.** Idle ones are cut
+  after a minute, so it has to keep reopening them. A per-address limit in
+  nginx would be two lines, but behind a proxy that hides client addresses
+  it would throttle everyone together, so the README leaves it to the proxy.
 - **A closed tab leaves a ghost player** until the server's timeout (200 s by
   default; `sv_timeout`). The old server behaved the same way.
 - **Some point-release maps show missing textures** (for example pro-q3dm6).
@@ -120,6 +124,20 @@ both changes in decision 6 were confirmed there. Safari is untested.
 - `podman run --rm -p 8080:8080 localhost/quakejs-rootless:dev`, then open
   <http://localhost:8080>.
 
+## Open from the independent review (2026-11-21)
+
+Its other findings are fixed. These need the owner:
+
+- **Base image tags.** The two `dhi.io/debian-base` lines pin a digest
+  without a tag, and Dependabot has no dhi.io credentials, so nothing moves
+  them. Writing the tags needs registry access to confirm which tag each
+  digest belongs to; the Dependabot entry needs its secrets.
+- **HEALTHCHECK.** Kept because `build-quakejs.sh` deliberately builds in
+  Docker format to preserve it. It only probes nginx's index page, by
+  starting Node every 30 seconds, and Kubernetes ignores it.
+- **`docker-compose.yml`** applies none of the hardening the Helm chart does
+  (read-only root, dropped capabilities).
+
 ## Left to do: phase 7, merge back
 
 1. Restore `.github/workflows/ci.yaml` (removed here because this repository
@@ -128,7 +146,10 @@ both changes in decision 6 were confirmed there. Safari is untested.
 2. Bring the branch into quakejs-rootless as v3.0.0. Breaking changes for
    the release notes: CPMA mode, `FS_GAME` and the Helm value `quake.fsGame`
    are gone; game data files lost their checksum prefixes and
-   `manifest.json`.
+   `manifest.json`; the WebSocket path is `/ws`, not `/`; a `server.cfg`
+   mounted at `/quakejs/base/baseq3/server.cfg` (never documented here, but
+   it worked) now stops the container, and belongs at
+   `/etc/quakejs/server.cfg`; query-string console commands are gone.
 3. Branch CI green on Docker, then an authorised push and merge.
 
 ## Working rules (carried over from quakejs-rootless)

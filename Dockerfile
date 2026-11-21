@@ -60,12 +60,16 @@ RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
 
 # The licence the web client shows comes out of the demo installer itself.
 COPY include/assets/linuxq3ademo-1.11-6.x86.gz.sh /tmp/
-RUN tail -n +165 /tmp/linuxq3ademo-1.11-6.x86.gz.sh | tar -xzO Help/Q3A_EULA.txt > /eula.txt
+RUN tail -n +165 /tmp/linuxq3ademo-1.11-6.x86.gz.sh | tar -xzO Help/Q3A_EULA.txt | \
+    iconv -f latin1 -t utf-8 > /eula.txt
 
 # Node.js and the bridge's npm dependency. This stage also gathers the files
 # the servers read, with write access for group and others removed whatever
 # the build host's umask. (COPY --chmod is not used for these: Docker's
-# BuildKit applies its mode to directories it creates.)
+# BuildKit applies its mode to directories it creates.) nginx tells browsers
+# whether a file changed by its time and size, so each served file gets a time
+# taken from its content: a new image then only makes players download again
+# what really changed.
 FROM dhi.io/node:24-debian13-dev@sha256:c470ac1a36644b3633ddd65118672ecb8ede1767603d5fbeb34b9e0f51f8f7d7 AS node
 
 WORKDIR /quakejs
@@ -80,7 +84,8 @@ COPY --from=native /eula.txt /srv/www/
 COPY server.cfg /etc/quakejs/
 COPY COPYING LICENSE.MIT /usr/share/doc/quakejs-rootless/
 RUN mkdir base && \
-    chmod -R go-w /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless
+    chmod -R go-w /quakejs /srv/www /etc/quakejs /usr/share/doc/quakejs-rootless && \
+    find /srv/www -type f -exec sh -c 'touch -d "@$((0x$(sha256sum "$1" | cut -c1-7)))" "$1"' _ {} \;
 
 FROM dhi.io/debian-base@sha256:c5274bb35ad2972614a2dbfa4d9727c3f3c0605081b88d1fbae560e53cd8a65a
 

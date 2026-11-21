@@ -8,7 +8,7 @@ const INSTALLERS = [
 	{ name: 'linuxq3ademo-1.11-6.x86.gz.sh', scriptLines: 164, paks: /^demoq3\/pak0\.pk3$/ },
 	{ name: 'linuxq3apoint-1.32b-3.x86.run', scriptLines: 355, paks: /^baseq3\/pak\d\.pk3$/ },
 ];
-const SOCKET_URL = location.origin.replace(/^http/, 'ws') + '/';
+const SOCKET_URL = location.origin.replace(/^http/, 'ws') + '/ws';
 // Where the engine keeps the player's settings (name, controls, video).
 const CONFIG_DIR = '/home/web_user/.config/Quake3/demoq3';
 
@@ -22,7 +22,7 @@ function serverInfo() {
 		const socket = new WebSocket(SOCKET_URL);
 		const fail = () => {
 			socket.close();
-			reject(new Error('The game server is not answering. Reload the page to try again.'));
+			reject(new Error('The game server is not answering.'));
 		};
 		socket.binaryType = 'arraybuffer';
 		socket.onopen = () => socket.send(Uint8Array.from('\xff\xff\xff\xffgetinfo', (c) => c.charCodeAt(0)));
@@ -52,11 +52,12 @@ async function list(dir) {
 		.map((entry) => ({ path: dir + entry.name, size: entry.size }));
 }
 
-// Downloads files into memory, reporting progress across all of them.
+// Downloads files into memory one after another, reporting progress across all of them.
 async function download(files) {
 	const total = files.reduce((sum, file) => sum + file.size, 0);
+	const downloads = [];
 	let received = 0;
-	return Promise.all(files.map(async (file) => {
+	for (const file of files) {
 		const response = await fetch('assets/' + file.path);
 		if (!response.ok) {
 			throw new Error(`Could not download ${file.path} (HTTP ${response.status}).`);
@@ -66,14 +67,16 @@ async function download(files) {
 		for (let at = 0; ;) {
 			const { done, value } = await reader.read();
 			if (done) {
-				return data;
+				break;
 			}
 			data.set(value, at);
 			at += value.length;
 			received += value.length;
 			status.textContent = `Downloading game data: ${Math.round(received / 2 ** 20)} of ${Math.round(total / 2 ** 20)} MB`;
 		}
-	}));
+		downloads.push(data);
+	}
+	return downloads;
 }
 
 // Calls write(path, bytes) for the wanted paks inside an installer.
@@ -174,11 +177,14 @@ function stopped(reason) {
 
 play.onclick = () => start().catch((error) => {
 	document.body.className = '';
-	status.textContent = error.message;
+	status.textContent = `Could not start: ${error.message}`;
+	// Trying again is safe as long as the engine has not started.
+	play.disabled = Boolean(engine);
 	console.error(error);
 });
 
-fetch('eula.txt').then((response) => response.text()).then((text) => {
-	document.getElementById('eula').textContent = text;
-	play.disabled = false;
+// Without the licence there is nothing to agree to, so no playing.
+fetch('eula.txt').then(async (response) => {
+	document.getElementById('eula').textContent = response.ok ? await response.text() : `Could not load the licence (HTTP ${response.status}).`;
+	play.disabled = !response.ok;
 });

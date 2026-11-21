@@ -29,7 +29,7 @@ curl -fsSI "$url/ioquake3.wasm" | grep -qi '^content-type: application/wasm' || 
 curl -fsS "$url/assets/baseq3/" | grep -q pak100.pk3 || fail "game data listing"
 # Ask the game server for its status through nginx's WebSocket proxy, as a client would.
 "$engine" exec -w /quakejs "$name" node -e '
-  const ws = new (require("ws"))("ws://127.0.0.1:8080/");
+  const ws = new (require("ws"))("ws://127.0.0.1:8080/ws");
   setTimeout(() => process.exit(1), 5000);
   ws.on("open", () => ws.send(Buffer.from("\xff\xff\xff\xffgetstatus\n", "latin1")));
   ws.on("message", (d) => d.includes("statusResponse") && process.exit(0));
