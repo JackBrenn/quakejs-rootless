@@ -24,8 +24,8 @@ NOT covered by this licence:
                                     maps; proprietary, see README.md
     ioquake3                      - not in this repository; the image build
                                     compiles it from the commit named in the
-                                    Dockerfile, with the one-line change made
-                                    there, GPL-2.0-or-later
+                                    Dockerfile, with the two small changes
+                                    made there, GPL-2.0-or-later
 
 Where a file in this repository is available under both this licence and the
 GPL, you may use it under either at your option. The combined work, and any

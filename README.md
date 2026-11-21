@@ -76,9 +76,9 @@ The project as distributed, images included, is a combined work under the GNU
 GPL, version 2 or later ([`COPYING`](COPYING)). The packaging in this
 repository is also available under MIT; [`LICENSE.MIT`](LICENSE.MIT) lists the
 files it covers. The engine in the image is ioquake3, compiled from the commit
-pinned in the [`Dockerfile`](Dockerfile) with the one-line change made there:
-that commit of [ioquake/ioq3](https://github.com/ioquake/ioq3), with that
-change, is its corresponding source.
+pinned in the [`Dockerfile`](Dockerfile) with the two small changes made
+there: that commit of [ioquake/ioq3](https://github.com/ioquake/ioq3), with
+those changes, is its corresponding source.
 
 The game data in `include/assets/` is not free software and not under the GPL:
 the Quake III Arena demo, under id Software's demo licence (non-commercial

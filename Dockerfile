@@ -1,6 +1,6 @@
 # The dhi.io base images are Docker Hardened Images: log in to dhi.io before building.
 
-# The engine is built from this ioquake3 commit, with the one change made in
+# The engine is built from this ioquake3 commit, with the two changes made in
 # the web stage below. To update, change the commit and the checksum of its
 # source archive together.
 ARG IOQ3_COMMIT=52088b9eae247d8e321c8dc1fb49a879652854f9
@@ -15,14 +15,22 @@ ADD --checksum=sha256:865d50e632a4d30366c465da96cfcf9067fe2d2abca6496f51b0001973
 # inside the demo's pak0.pk3. Nothing else from this image ships.
 FROM docker.io/emscripten/emsdk:7.0.0@sha256:3803e37bf748ddee14d31cf712fcab09ca367fca83bbefeb78ce4c1f284e6f3f AS web
 
-# The one change to ioquake3: it compiles its WebGL shaders at medium float
-# precision, which Chromium-based browsers pass on to the graphics driver.
-# Distant surfaces then flicker through each other, and per-pixel lighting
-# turns surfaces white. High precision is what desktop OpenGL always uses.
+# The two changes to ioquake3, both for Chromium-based browsers. The build
+# fails if either no longer applies.
+# 1. It compiles its WebGL shaders at medium float precision, which those
+#    browsers pass on to the graphics driver. Distant surfaces then flicker
+#    through each other, and per-pixel lighting turns surfaces white. High
+#    precision is what desktop OpenGL always uses.
+# 2. It re-allocates its dynamic vertex and index buffers before every draw.
+#    In those browsers some draws then come out missing or garbled for a
+#    frame: walls, models and HUD elements flicker.
 COPY --from=source /ioq3.tar.gz /tmp/
 RUN mkdir /ioq3 && tar -xzf /tmp/ioq3.tar.gz -C /ioq3 --strip-components=1 && \
-    sed -i 's/precision mediump float;/precision highp float;/' /ioq3/code/renderergl2/tr_glsl.c && \
-    grep -q 'precision highp float;' /ioq3/code/renderergl2/tr_glsl.c && \
+    cd /ioq3/code/renderergl2 && \
+    grep -q 'precision mediump float;' tr_glsl.c && \
+    sed -i 's/precision mediump float;/precision highp float;/' tr_glsl.c && \
+    [ "$(grep -c 'tess\.vao->.*Size, NULL, GL_DYNAMIC_DRAW' tr_vbo.c)" = 2 ] && \
+    sed -i '/tess\.vao->.*Size, NULL, GL_DYNAMIC_DRAW/d' tr_vbo.c && \
     emcmake cmake -S /ioq3 -B /build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build /build -j "$(nproc)" && \
     cd /build/Release/baseq3 && python3 -m zipfile -c /build/vm.pk3 vm/

@@ -10,8 +10,8 @@ with podman and passes `test/smoke.sh`. Nothing has been pushed.
 
 The two prebuilt QuakeJS engine files are gone. The image build now compiles
 [ioquake/ioq3](https://github.com/ioquake/ioq3) at a pinned commit
-(`52088b9`, 2026-11-04) with **one one-line change** (shader precision, see
-decision 6):
+(`52088b9`, 2026-11-04) with **two small changes** for Chromium-based
+browsers (see decision 6):
 
 ```
 browser ── http(s)/ws(s) :8080 ──> nginx ──┬─ static: page, ioquake3.js/.wasm, game data
@@ -61,14 +61,18 @@ Play-tested by hand in Firefox and Brave on 2026-11-21. Safari is untested.
 3. **Game code** — QVMs built from ioquake3 source.
 4. **Bridge** — Node with `ws`, as already in the image.
 5. **emsdk** — `emscripten/emsdk:7.0.0` pinned by digest, build stage only.
-6. **Shaders at high float precision** — the only change to ioquake3, a
-   `sed` in the Dockerfile's web stage. Upstream compiles its WebGL shaders
-   with `precision mediump float`. Firefox on desktop OpenGL is unaffected;
-   Chromium-based browsers (Chrome, Brave) hand it to an OpenGL ES driver
-   that applies it.
-   Depth then loses precision, so distant surfaces flicker through each
-   other, and per-pixel lighting draws surfaces white. Found from a
-   play-test in Brave; verified fixed there. Worth reporting upstream.
+6. **Two changes to ioquake3**, both `sed` lines in the Dockerfile's web
+   stage, both found from play-tests in Brave. Firefox shows neither
+   problem; Chrome and Brave show both. Both are worth reporting upstream.
+   - *Shaders at high float precision.* Upstream compiles its WebGL shaders
+     with `precision mediump float`, which Chromium hands to an OpenGL ES
+     driver that applies it. Depth loses precision, so distant surfaces
+     flicker through each other, and per-pixel lighting draws surfaces
+     white.
+   - *No buffer re-allocation per draw.* `RB_UpdateTessVao` re-allocates
+     ("orphans") the dynamic vertex and index buffers before every draw.
+     Under Chromium some draws then come out missing or garbled for one
+     frame: walls, models and HUD elements flicker even with a still camera.
 7. **Maps on demand** — the page fetches the `pakN` files and the map being
    played; any other map pak is downloaded by the engine from the game server
    when the map changes (`sv_allowDownload 1`, `sv_dlRate 1000` in
@@ -97,8 +101,8 @@ Play-tested by hand in Firefox and Brave on 2026-11-21. Safari is untested.
   cannot exit its runtime, so the page watches for
   `----- Client Shutdown (...) -----`. If upstream rewords that line, `quit`
   stops returning to the first screen; nothing else breaks.
-- Two things worth reporting upstream: the medium shader precision
-  (decision 6), and `quit` not ending the Emscripten runtime.
+- Worth reporting upstream: the two rendering problems in decision 6, and
+  `quit` not ending the Emscripten runtime.
 
 ## Testing notes
 
@@ -106,6 +110,9 @@ Play-tested by hand in Firefox and Brave on 2026-11-21. Safari is untested.
   with `--enable-gpu --use-angle=gl`. Software GL (SwiftShader) fails in the
   renderer's shader setup and is no use. Brave runs the same way through
   Playwright's `executablePath`.
+- Flicker does not show in single screenshots. Record the page
+  (Playwright's `recordVideo`) with a still camera and compare consecutive
+  frames.
 - `podman run --rm -p 8080:8080 localhost/quakejs-rootless:dev`, then open
   <http://localhost:8080>.
 
