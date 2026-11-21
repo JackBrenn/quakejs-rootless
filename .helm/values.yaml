@@ -45,7 +45,6 @@ ingress:
   #      - quake.example.com
 
 quake:
-  fsGame: baseq3   # or cpma
   # Replaces the image's server.cfg when set, e.g.
   # serverConfig: |
   #   seta sv_hostname "My server"

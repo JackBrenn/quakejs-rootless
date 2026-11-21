@@ -41,7 +41,6 @@ ingress:
   tls: []            # e.g. [{secretName: quake-tls, hosts: [quake.example.com]}]
 
 quake:
-  fsGame: baseq3     # or cpma
   serverConfig: ""   # set to replace the image's server.cfg
 ```
 
@@ -52,10 +51,8 @@ game data into an `emptyDir` when it starts.
 
 - **`server.cfg`**: the server settings. Edit it and rebuild, or mount your own
   over `/etc/quakejs/server.cfg`.
-- **`FS_GAME`**: `baseq3` (default) or `cpma`.
 - **Port 8080** is the only port, so it is all a TLS reverse proxy needs.
-- **Maps**: a `.pk3` in `include/assets/baseq3/` (or `cpma/`) named after the
-  map it holds, such as `q3wctf1.pk3`, is fetched by players only when the
+- **Maps**: a `.pk3` in `include/assets/baseq3/` named after the map it holds, such as `q3wctf1.pk3`, is fetched by players only when the
   server plays that map.
 
 ## Build
@@ -84,7 +81,7 @@ from the commit pinned in the [`Dockerfile`](Dockerfile): that commit of
 The game data in `include/assets/` is not free software and not under the GPL:
 the Quake III Arena demo, under id Software's demo licence (non-commercial
 redistribution only, and running this container means accepting it); the 1.32b
-point release; and third-party maps and mods under their authors' terms. Do not
+point release; and third-party maps under their authors' terms. Do not
 add retail `.pk3` files to an image you publish.
 
 ## Credits

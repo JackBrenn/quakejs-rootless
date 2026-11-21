@@ -21,7 +21,7 @@ Covered by this licence:
 NOT covered by this licence:
 
     include/assets/**             - Quake III Arena game content and third-party
-                                    maps and mods; proprietary, see README.md
+                                    maps; proprietary, see README.md
     ioquake3                      - not in this repository; the image build
                                     compiles it from the commit named in the
                                     Dockerfile, GPL-2.0-or-later

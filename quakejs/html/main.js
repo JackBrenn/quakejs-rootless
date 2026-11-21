@@ -14,7 +14,7 @@ const SOCKET_URL = location.origin.replace(/^http/, 'ws') + '/';
 const play = document.getElementById('play');
 const status = document.getElementById('status');
 
-// Asks the game server which mod and map it is running.
+// Asks the game server which map it is running.
 function serverInfo() {
 	return new Promise((resolve, reject) => {
 		const socket = new WebSocket(SOCKET_URL);
@@ -95,13 +95,11 @@ async function start() {
 	play.disabled = true;
 	status.textContent = 'Contacting the game server…';
 	const info = await serverInfo();
-	const mod = /^\w+$/.test(info.game || '') ? info.game : '';
 
 	// Paks named pakN hold the game itself and are needed up front. The others
 	// each hold one map: fetch the one being played now, and let the engine
 	// download any other from the game server if the map changes to it.
-	const dirs = ['', 'demoq3/', 'baseq3/'].concat(mod ? [mod + '/'] : []);
-	const listed = (await Promise.all(dirs.map(list))).flat();
+	const listed = (await Promise.all(['', 'demoq3/', 'baseq3/'].map(list))).flat();
 	const installers = INSTALLERS.map((installer) => listed.find((file) => file.path === installer.name));
 	const paks = listed.filter((file) => /\/(pak\d+|vm)\.pk3$/.test(file.path) || file.path.endsWith(`/${info.mapname}.pk3`));
 	const data = await download([...installers, ...paks]);
@@ -123,7 +121,7 @@ async function start() {
 		canvas: document.getElementById('canvas'),
 		arguments: [
 			// The demo's pak0 is only accepted from a demoq3 directory.
-			'+set', 'fs_basegame', 'demoq3', '+set', 'fs_game', mod,
+			'+set', 'fs_basegame', 'demoq3',
 			// IPv4 only: the engine's UDP socket is carried over the WebSocket below.
 			'+set', 'net_enabled', '1', '+set', 'cl_allowDownload', '1',
 			'+set', 'r_fullscreen', '0', '+set', 'r_allowResize', '1', '+set', 'r_mode', '-1',

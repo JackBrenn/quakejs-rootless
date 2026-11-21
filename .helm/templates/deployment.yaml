@@ -32,9 +32,6 @@ spec:
         - name: quake
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: FS_GAME
-              value: {{ .Values.quake.fsGame | quote }}
           ports:
             - name: http-game
               containerPort: 8080

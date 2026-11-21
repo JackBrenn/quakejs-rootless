@@ -4,10 +4,8 @@
 # exits, the container exits with it.
 set -euo pipefail
 
-case "${FS_GAME:=baseq3}" in
-    baseq3|cpma) ;;
-    *) echo "FS_GAME must be baseq3 or cpma, not '$FS_GAME'" >&2; exit 1 ;;
-esac
+# Until v3 this selected the CPMA mod, which does not run on unmodified ioquake3.
+[ "${FS_GAME:-baseq3}" = baseq3 ] || { echo "FS_GAME is no longer supported: remove it" >&2; exit 1; }
 
 # Gather all game data in one directory tree, as the web client does: links to
 # the paks in the image, and the paks out of id's installers, which the image
@@ -20,8 +18,7 @@ tail -n +356 /srv/www/assets/linuxq3apoint-1.32b-3.x86.run | tar -xzf - --wildca
 
 # Copy in server.cfg (the image's, or one mounted over /etc/quakejs/server.cfg)
 # unless one is already mounted in the game data directory.
-cfg=$FS_GAME/server.cfg
-[ -e "$cfg" ] || { mkdir -p "$FS_GAME"; cp /etc/quakejs/server.cfg "$cfg"; }
+[ -e baseq3/server.cfg ] || cp /etc/quakejs/server.cfg baseq3/
 
 trap 'kill -TERM $(jobs -p) 2>/dev/null || true' TERM INT
 
@@ -30,7 +27,7 @@ node /quakejs/bridge.js &
 # The demo's pak0.pk3 is only accepted from a demoq3 directory (fs_basegame).
 ioq3ded +set dedicated 1 +set net_ip 127.0.0.1 \
     +set fs_basepath /quakejs/base +set fs_homepath /quakejs/base \
-    +set fs_basegame demoq3 +set fs_game "${FS_GAME#baseq3}" +exec server.cfg &
+    +set fs_basegame demoq3 +exec server.cfg &
 
 status=0
 wait -n || status=$?
