@@ -1,13 +1,7 @@
 {
-  "name": "quakejs",
-  "version": "1.0.0",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/JackBrenn/quakejs-rootless.git"
-  },
-  "author": "Anthony Pesch",
-  "license": "(MIT AND GPL-2.0-or-later)",
-  "readmeFilename": "README.md",
+  "name": "quakejs-rootless",
+  "private": true,
+  "license": "MIT",
   "dependencies": {
     "ws": "~8.22.0"
   }

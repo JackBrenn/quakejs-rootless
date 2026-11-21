@@ -1,0 +1,60 @@
+html, body {
+	margin: 0;
+	height: 100%;
+	background: #000;
+	color: #ccc;
+	font: 15px/1.5 sans-serif;
+}
+
+/* The engine draws at the window's size; it restarts its renderer on resize. */
+canvas {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: none;
+}
+
+.playing canvas { display: block; }
+.playing #gate { display: none; }
+
+#gate {
+	box-sizing: border-box;
+	max-width: 46em;
+	height: 100%;
+	margin: 0 auto;
+	padding: 1em;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75em;
+}
+
+#gate > * { margin: 0; }
+
+h1 { color: #e33; font-size: 1.6em; }
+
+#eula {
+	flex: 1;
+	min-height: 6em;
+	overflow: auto;
+	padding: 0.75em;
+	border: 1px solid #444;
+	white-space: pre-wrap;
+	font-size: 0.85em;
+}
+
+button {
+	align-self: start;
+	padding: 0.6em 1.4em;
+	border: 0;
+	background: #b22;
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+
+button:disabled { background: #444; cursor: default; }
+
+#status { min-height: 1.5em; color: #fff; }
+#source { font-size: 0.85em; }
+a { color: #e88; }

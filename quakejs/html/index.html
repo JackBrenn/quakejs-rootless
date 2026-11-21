@@ -1,12 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 	<head>
-		<title>QuakeJS Local</title>
-		<link rel="stylesheet" href="game.css">
-		<script src="ioquake3.js"></script>
-		<script src="main.js"></script>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>QuakeJS Rootless</title>
+		<link rel="icon" href="favicon.ico">
+		<link rel="stylesheet" href="main.css">
+		<script type="module" src="main.js"></script>
 	</head>
 	<body>
-		<div id="viewport-frame"></div>
+		<canvas id="canvas"></canvas>
+		<main id="gate">
+			<h1>Quake III Arena</h1>
+			<p>This server plays the Quake III Arena demo. Its game data is id Software's, under this licence:</p>
+			<pre id="eula">Loading the licence…</pre>
+			<button id="play" disabled>I agree — play</button>
+			<p id="status"></p>
+			<p id="source">
+				The engine is <a href="https://ioquake3.org" target="_blank" rel="noopener">ioquake3</a>,
+				free software under the GNU GPL, version 2 or later. Its source and build are at
+				<a href="https://github.com/JackBrenn/quakejs-rootless" target="_blank" rel="noopener">github.com/JackBrenn/quakejs-rootless</a>.
+				The game data is id Software's and third parties', under their own terms, not the GPL.
+			</p>
+		</main>
 	</body>
 </html>

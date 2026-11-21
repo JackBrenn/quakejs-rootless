@@ -3,6 +3,8 @@
 Multiplayer Quake III Arena in the browser, served from one rootless container.
 A fork of [treyyoder/quakejs-docker](https://github.com/treyyoder/quakejs-docker).
 
+- [ioquake3](https://ioquake3.org) built from source: the browser client as
+  WebAssembly, the game server as a native Linux program
 - Debian 13 Docker Hardened Image, Node.js 24 LTS and nginx-light
 - Runs as a non-root user
 - One port (8080) serves the web client, the game data and the WebSocket game traffic
@@ -43,7 +45,7 @@ quake:
   serverConfig: ""   # set to replace the image's server.cfg
 ```
 
-The pod runs with a read-only root filesystem; the game server downloads its
+The pod runs with a read-only root filesystem; the game server unpacks its
 game data into an `emptyDir` when it starts.
 
 ## Configuration
@@ -52,11 +54,16 @@ game data into an `emptyDir` when it starts.
   over `/etc/quakejs/server.cfg`.
 - **`FS_GAME`**: `baseq3` (default) or `cpma`.
 - **Port 8080** is the only port, so it is all a TLS reverse proxy needs.
+- **Maps**: a `.pk3` in `include/assets/baseq3/` (or `cpma/`) named after the
+  map it holds, such as `q3wctf1.pk3`, is fetched by players only when the
+  server plays that map.
 
 ## Build
 
 Pulling the hardened base images needs a dhi.io login (free with a Docker Hub
-account). The commands are the same with `docker`.
+account). The commands are the same with `docker`. The build compiles ioquake3
+from the commit pinned at the top of the [`Dockerfile`](Dockerfile); to move to
+a newer one, change that commit and its checksum.
 
 ```bash
 podman login dhi.io
@@ -70,9 +77,9 @@ podman build -t quakejs-rootless .
 The project as distributed, images included, is a combined work under the GNU
 GPL, version 2 or later ([`COPYING`](COPYING)). The packaging in this
 repository is also available under MIT; [`LICENSE.MIT`](LICENSE.MIT) lists the
-files it covers. The two engine builds, `quakejs/build/ioq3ded.js` and
-`quakejs/html/ioquake3.js`, list their changes and corresponding source in
-their headers.
+files it covers. The engine in the image is ioquake3, compiled without changes
+from the commit pinned in the [`Dockerfile`](Dockerfile): that commit of
+[ioquake/ioq3](https://github.com/ioquake/ioq3) is its corresponding source.
 
 The game data in `include/assets/` is not free software and not under the GPL:
 the Quake III Arena demo, under id Software's demo licence (non-commercial
@@ -82,7 +89,8 @@ add retail `.pk3` files to an image you publish.
 
 ## Credits
 
-- [@inolen](https://github.com/inolen): [QuakeJS](https://github.com/inolen/quakejs)
+- The [ioquake3](https://github.com/ioquake/ioq3) project: the engine, including its web port
+- [@inolen](https://github.com/inolen): [QuakeJS](https://github.com/inolen/quakejs), the browser port this project used before
 - [@nerosketch](https://github.com/nerosketch): [QuakeJS fork](https://github.com/nerosketch/quakejs) with local server support
 - [@treyyoder](https://github.com/treyyoder): [quakejs-docker](https://github.com/treyyoder/quakejs-docker)
 - [@mescanne](https://github.com/mescanne): single-port nginx WebSocket routing

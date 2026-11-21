@@ -16,16 +16,17 @@ trap '"$engine" rm -f "$name" >/dev/null 2>&1' EXIT
 
 fail() { "$engine" logs "$name" 2>&1 | tail -n 30; echo "FAIL: $*" >&2; exit 1; }
 
-# The game server is ready once it has synced its paks and loaded the first map.
+# The game server is ready once it has loaded the first map.
 for i in $(seq 90); do
   "$engine" logs "$name" 2>&1 | grep -q 'AAS initialized' && break
   [ "$i" = 90 ] && fail "game server did not start"
   sleep 2
 done
 
-curl -fsS "$url/" | grep -q ioquake3.js || fail "index page"
+curl -fsS "$url/" | grep -q main.js || fail "index page"
 curl -fsSI "$url/" | grep -qi '^x-content-type-options: nosniff' || fail "security headers"
-curl -fsS "$url/assets/manifest.json" | grep -q pak100.pk3 || fail "asset manifest"
+curl -fsSI "$url/ioquake3.wasm" | grep -qi '^content-type: application/wasm' || fail "engine not served as WebAssembly"
+curl -fsS "$url/assets/baseq3/" | grep -q pak100.pk3 || fail "game data listing"
 # Ask the game server for its status through nginx's WebSocket proxy, as a client would.
 "$engine" exec -w /quakejs "$name" node -e '
   const ws = new (require("ws"))("ws://127.0.0.1:8080/");

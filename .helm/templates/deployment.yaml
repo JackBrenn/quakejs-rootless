@@ -52,7 +52,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           # The root filesystem is read-only: nginx writes to /tmp and the
-          # game server downloads its game data into /quakejs/base.
+          # game server unpacks its game data into /quakejs/base.
           volumeMounts:
             - name: tmp
               mountPath: /tmp

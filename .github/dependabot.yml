@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Dockerfiles: keep the dhi.io base images (digests and versions) current,
+  # Dockerfiles: keep the base and build images (digests and versions) current,
   # and catch new versions of anything installed via apt in the builder.
   - package-ecosystem: "docker"
     directory: "/"
